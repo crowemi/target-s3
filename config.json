@@ -1,0 +1,10 @@
+{
+    "aws_region": "us-west-2",
+    "object_type": "parquet",
+    "bucket": "00-data-lake",
+    "prefix": "dev/fluro",
+    "append_date_to_prefix": true,
+    "append_date_to_prefix_grain": "month",
+    "max_file_record_size": 10000,
+    "max_file_size": 10000
+}
