@@ -37,6 +37,11 @@ This section can be created by copy-pasting the CLI output from:
 target-s3 --about --format=markdown
 ```
 -->
+## Capabilities
+
+* `about`
+* `stream-maps`
+* `schema-flattening`
 
 A full list of supported settings and capabilities for this
 target is available by running:
@@ -44,6 +49,28 @@ target is available by running:
 ```bash
 target-s3 --about
 ```
+
+## Settings
+
+| Setting                      | Required | Default | Description |
+|:-----------------------------|:--------:|:-------:|:------------|
+| aws_access_key               | False    | None    | The aws secret access key for auth to S3. |
+| aws_secret_access_key        | False    | None    | The aws secret access key for auth to S3. |
+| aws_region                   | True     | None    | The aws region to target |
+| bucket                       | True     | None    | The aws bucket to target. |
+| prefix                       | False    | None    | The prefix for the key. |
+| append_date_to_prefix        | False    | None    | A flag to append the date to the key prefix. |
+| append_date_to_prefix_grain  | False    | None    | The grain of the date to append to the prefix. |
+| append_date_to_filename      | False    | None    | A flag to append the date to the key filename. |
+| append_date_to_filename_grain| False    | None    | The grain of the date to append to the filename. |
+| object_format                | False    | None    | The format of the storage object. |
+| flatten_records              | False    | None    | A flag indictating to flatten records. |
+| stream_maps                  | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
+| stream_map_config            | False    | None    | User-defined config values to be used within map expressions. |
+| flattening_enabled           | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
+| flattening_max_depth         | False    | None    | The max depth to flatten schemas. |
+
+
 
 ### Configure using environment variables
 
