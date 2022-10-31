@@ -6,7 +6,7 @@ from singer_sdk.target_base import Target
 from singer_sdk import typing as th
 from target_s3 import sinks
 
-from target_s3.object_types.object_type_base import DATE_GRAIN
+from target_s3.formats.format_base import DATE_GRAIN
 
 from target_s3.sinks import (
     s3Sink,

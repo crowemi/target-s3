@@ -17,6 +17,7 @@ DATE_GRAIN = {
     'second': 2,
     'microsecond': 1
 }
+COMPRESSION = {}
 
 
 def object_type_factory(object_type_class, *pargs, **kargs):
@@ -24,7 +25,7 @@ def object_type_factory(object_type_class, *pargs, **kargs):
     return object_type_class(*pargs, **kargs)
 
 
-class ObjectTypeBase(metaclass=ABCMeta):
+class FormatBase(metaclass=ABCMeta):
 
     """ This is the object type base class """
     def __init__(self, config: dict, context: dict, extension: str) -> None:

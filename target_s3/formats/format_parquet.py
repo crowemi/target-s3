@@ -2,10 +2,10 @@ import pyarrow
 from pyarrow import fs
 from pyarrow.parquet import ParquetWriter
 
-from target_s3.object_types.object_type_base import ObjectTypeBase
+from target_s3.formats.format_base import FormatBase
 
 
-class ObjectTypeParquet(ObjectTypeBase):
+class FormatParquet(FormatBase):
     def __init__(self, config, context) -> None:
         super().__init__(config, context, 'parquet')
         self.create_filesystem()
