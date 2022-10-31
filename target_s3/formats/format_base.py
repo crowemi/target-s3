@@ -40,6 +40,8 @@ class FormatBase(metaclass=ABCMeta):
         self.logger = context['logger']
 
         self.full_qualified_key = self.create_key()
+        self.logger.info(f"key: {self.full_qualified_key}")
+        self.file_iterator = 1
 
 
     def create_key(self) -> str:
@@ -83,8 +85,7 @@ class FormatBase(metaclass=ABCMeta):
         """ Execute record prep. (default) """
         if self.config.get('flatten_records', None):
             # flatten records
-            records = list(map(lambda record: self.flatten_record(record), self.records))
-        self.records = records
+            self.records = list(map(lambda record: self.flatten_record(record), self.records))
 
     @abstractmethod
     def _write(self) -> None:

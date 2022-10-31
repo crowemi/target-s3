@@ -20,7 +20,7 @@ OBJECT_TYPE = {
 class s3Sink(BatchSink):
     """s3 target sink class."""
 
-    MAX_SIZE = 10000  # Max records to write in one batch
+    MAX_SIZE = 100  # Max records to write in one batch
 
     def __init__(self, target: any, stream_name: str, schema: dict, key_properties: list[str] | None) -> None:
         super().__init__(target, stream_name, schema, key_properties)

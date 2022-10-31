@@ -12,10 +12,11 @@ class FormatParquet(FormatBase):
         # execute process
         self.run()
 
-    def create_filesystem(self) -> None:
+    def create_filesystem(self, aws_region: str = None) -> None:
         """Creates a pyarrow FileSystem object for accessing S3."""
+        aws_region = self.aws_region if aws_region is None else aws_region
         try:
-            self.file_system = fs.S3FileSystem(region=self.aws_region)
+            self.file_system = fs.S3FileSystem(region=aws_region)
         except Exception as e:
             self.logger.error('Failed to create parquet file system.')
             self.logger.error(e)
@@ -43,11 +44,12 @@ class FormatParquet(FormatBase):
         df = self.create_dataframe()
         try:
             ParquetWriter(
-                self.full_qualified_key,
+                f"{self.full_qualified_key}-{self.file_iterator:04}.{self.extension}",
                 df.schema,
-                compression='gzip',
+                compression='gzip',  # TODO: support multiple compression types
                 filesystem=self.file_system,
             ).write_table(df)
+            self.file_iterator += 1
         except Exception as e:
             self.logger.error('Failed to write parquet file to S3.')
             raise e

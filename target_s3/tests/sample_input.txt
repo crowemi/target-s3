@@ -1,6 +1,17 @@
 {"type": "SCHEMA", "stream": "users", "key_properties": ["id"], "schema": {"required": ["id"], "type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}, "address": {"type": "object"}}}}
 {"type": "RECORD", "stream": "users", "record": {"id": 1, "name": "frank", "address": {"city": "city", "state": "state", "zip": "zip"}}}
 {"type": "RECORD", "stream": "users", "record": {"id": 2, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 3, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 4, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 5, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 6, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 7, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 8, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 9, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 10, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 11, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 12, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
+{"type": "RECORD", "stream": "users", "record": {"id": 13, "name": "mike", "address": {"city": "city", "state": "state", "zip": "zip"}}}
 {"type": "SCHEMA", "stream": "locations", "key_properties": ["id"], "schema": {"required": ["id"], "type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}, "address": {"type": "object"}}}}
 {"type": "RECORD", "stream": "locations", "record": {"id": 1, "name": "tom", "address": {"city": "city", "state": "state", "zip": "zip"}}}
 {"type": "STATE", "value": {"users": 2, "locations": 1}}
