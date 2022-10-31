@@ -1,18 +1,131 @@
-from abc import ABC
-import abc
+import re
+import inflection
+import json
+import collections
+import logging
+from datetime import datetime
+from abc import ABCMeta, abstractmethod
 
 
-class ObjectTypeBase(ABC):
+LOGGER = logging.getLogger("target-s3")
+DATE_GRAIN = {
+    'year': 7,
+    'month': 6,
+    'day': 5,
+    'hour': 4,
+    'minute': 3,
+    'second': 2,
+    'microsecond': 1
+}
+
+
+def object_type_factory(object_type_class, *pargs, **kargs):
+    """ A factory for creating ObjectTypes. """
+    return object_type_class(*pargs, **kargs)
+
+
+class ObjectTypeBase(metaclass=ABCMeta):
+
     """ This is the object type base class """
-    def __init__(self, aws_region: str, s3_bucket: str, s3_prefix: str) -> None:
-        self.aws_region = aws_region
-        self.s3_bucket = s3_bucket
-        self.s3_prefix = s3_prefix
+    def __init__(self, config: dict, context: dict, extension: str) -> None:
+        # TODO: perhaps we should do some scrubbing here?
+        self.config = config
+        self.context = context
+        self.extension = extension
 
-    @abc.abstractmethod
-    def prepare_records(self, records):
-        raise NotImplementedError
+        self.aws_region = config.get('aws_region')  # required
+        self.bucket = config.get('bucket')  # required
+        self.prefix = config.get('prefix', None)
+        self.logger = context['logger']
 
-    @abc.abstractmethod
-    def write(self, records) -> None:
-        raise NotImplementedError
+        self.full_qualified_key = self.create_key()
+
+
+    def create_key(self) -> str:
+        batch_id = self.context['batch_id'].replace("-", "").upper()
+        batch_start = self.context['batch_start_time']
+        folder_path = f"{self.bucket}/{self.prefix}/{self.context['stream_name']}/"
+        file_name = f"{batch_id}"
+        if self.config['append_date_to_prefix']:
+            grain = DATE_GRAIN[self.config['append_date_to_prefix_grain'].lower()]
+            folder_path += self.create_folder_structure(batch_start, grain)
+        if self.config['append_date_to_filename']:
+            grain = DATE_GRAIN[self.config['append_date_to_filename_grain'].lower()]
+            file_name += f"-{self.create_file_structure(batch_start, grain)}"
+
+        return f"{folder_path}{file_name}"
+
+    def create_folder_structure(self, batch_start: datetime, grain: int) -> str:
+        ret = ''
+        ret += f"{batch_start.year}/" if grain <= 7 else ''
+        ret += f"{batch_start.month:02}/" if grain <= 6 else ''
+        ret += f"{batch_start.day:02}/" if grain <= 5 else ''
+        ret += f"{batch_start.hour:02}/" if grain <= 4 else ''
+        ret += f"{batch_start.minute:02}/" if grain <= 3 else ''
+        ret += f"{batch_start.second:02}/" if grain <= 4 else ''
+        ret += f"{batch_start.microsecond}/" if grain <= 1 else ''
+        return ret
+
+    def create_file_structure(self, batch_start: datetime, grain: int) -> str:
+        ret = ''
+        ret += f"{batch_start.year}" if grain <= 7 else ''
+        ret += f"{batch_start.month:02}" if grain <= 6 else ''
+        ret += f"{batch_start.day:02}" if grain <= 5 else ''
+        ret += f"{batch_start.hour:02}" if grain <= 4 else ''
+        ret += f"{batch_start.minute:02}" if grain <= 3 else ''
+        ret += f"{batch_start.second:02}" if grain <= 4 else ''
+        ret += f"{batch_start.microsecond}" if grain <= 1 else ''
+        return ret
+
+    @abstractmethod
+    def _prepare_records(self) -> None:
+        """ Execute record prep. (default) """
+        if self.config.get('flatten_records', None):
+            # flatten records
+            records = list(map(lambda record: self.flatten_record(record), self.records))
+        self.records = records
+
+    @abstractmethod
+    def _write(self) -> None:
+        """ Execute the write to S3. (default) """
+        # I don't think there should be a default here
+        raise NotImplementedError("No default behavior assigned to _write method.")
+
+    @abstractmethod
+    def run(self, records) -> None:
+        """ Execute the steps for preparing/writing records to S3. (default) """
+        self.records = records
+        # prepare records for writing
+        self._prepare_records()
+        # write records to S3
+        self._write()
+
+    def flatten_key(self, k, parent_key, sep) -> str:
+        """"""
+        # TODO: standardize in the SDK?
+        full_key = parent_key + [k]
+        inflected_key = [n for n in full_key]
+        reducer_index = 0
+        while len(sep.join(inflected_key)) >= 255 and reducer_index < len(inflected_key):
+            reduced_key = re.sub(
+                r"[a-z]", "", inflection.camelize(inflected_key[reducer_index])
+            )
+            inflected_key[reducer_index] = (
+                reduced_key if len(reduced_key) > 1 else inflected_key[reducer_index][0:3]
+            ).lower()
+            reducer_index += 1
+
+        return sep.join(inflected_key)
+
+    def flatten_record(self, d, parent_key=[], sep="__") -> dict:
+        """"""
+        # TODO: standardize in the SDK?
+        items = []
+        for k in sorted(d.keys()):
+            v = d[k]
+            new_key = self.flatten_key(k, parent_key, sep)
+            if isinstance(v, collections.MutableMapping):
+                items.extend(self.flatten_record(v, parent_key + [k], sep=sep).items())
+            else:
+                items.append((new_key, json.dumps(v) if type(v) is list else v))
+        return dict(items)

@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from singer_sdk.target_base import Target
 from singer_sdk import typing as th
+from target_s3 import sinks
+
+from target_s3.object_types.object_type_base import DATE_GRAIN
 
 from target_s3.sinks import (
     s3Sink,
@@ -54,25 +57,29 @@ class Targets3(Target):
             "append_date_to_prefix_grain",
             th.StringType,
             description="The grain of the date to append to the prefix.",
-            allowed_values=[
-                "year",
-                "month",
-                "day",
-                "hour",
-                "minute"
-            ]
+            allowed_values=DATE_GRAIN.keys()
+        ),
+        th.Property(
+            "append_date_to_filename",
+            th.BooleanType,
+            description="A flag to append the date to the key filename."
+        ),
+        th.Property(
+            "append_date_to_filename_grain",
+            th.StringType,
+            description="The grain of the date to append to the filename.",
+            allowed_values=DATE_GRAIN.keys()
         ),
         th.Property(
             "object_format",
             th.StringType,
-            description="",
-            allowed_values=[
-                "parquet",
-                "csv",
-                "avro",
-                "jsonl",
-                "json"
-            ]
+            description="The format of the storage object.",
+            allowed_values=sinks.OBJECT_TYPE.keys()
+        ),
+        th.Property(
+            "flatten_records",
+            th.BooleanType,
+            description="A flag indictating to flatten records.",
         ),
     ).to_dict()
 

@@ -137,3 +137,5 @@ dmypy.json
 
 # ide
 .vscode
+
+config.json
