@@ -5,7 +5,7 @@ import logging
 
 from singer_sdk.sinks import BatchSink
 
-from target_s3.formats.format_base import FormatBase, object_type_factory
+from target_s3.formats.format_base import FormatBase, format_type_factory
 from target_s3.formats.format_parquet import FormatParquet
 from target_s3.formats.format_csv import FormatCsv
 from target_s3.formats.format_json import FormatJson
@@ -40,7 +40,7 @@ class s3Sink(BatchSink):
         context['stream_name'] = self.stream_name
         context['logger'] = self.logger
         # creates new object for each batch
-        format_type_client = object_type_factory(FORMAT_TYPE[self.format_type], self.config, context)
+        format_type_client = format_type_factory(FORMAT_TYPE[self.format_type], self.config, context)
         # force base object_type_client to object_type_base class
         assert isinstance(format_type_client, FormatBase) is True, \
             f"format_type_client must be of type Base; Type: {type(self.format_type_client)}."

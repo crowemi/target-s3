@@ -21,7 +21,7 @@ DATE_GRAIN = {
 COMPRESSION = {}
 
 
-def object_type_factory(object_type_class, *pargs, **kargs):
+def format_type_factory(object_type_class, *pargs, **kargs):
     """ A factory for creating ObjectTypes. """
     return object_type_class(*pargs, **kargs)
 
@@ -70,10 +70,9 @@ class FormatBase(metaclass=ABCMeta):
 
 
     def create_key(self) -> str:
-        batch_id = self.context['batch_id'].replace("-", "").upper()
         batch_start = self.context['batch_start_time']
         folder_path = f"{self.bucket}/{self.prefix}/{self.context['stream_name']}/"
-        file_name = f"{batch_id}"
+        file_name = ''
         if self.config['append_date_to_prefix']:
             grain = DATE_GRAIN[self.config['append_date_to_prefix_grain'].lower()]
             folder_path += self.create_folder_structure(batch_start, grain)
