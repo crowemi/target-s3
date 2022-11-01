@@ -9,8 +9,6 @@ class FormatParquet(FormatBase):
     def __init__(self, config, context) -> None:
         super().__init__(config, context, 'parquet')
         self.create_filesystem()
-        # execute process
-        self.run()
 
     def create_filesystem(self, aws_region: str = None) -> None:
         """Creates a pyarrow FileSystem object for accessing S3."""
@@ -40,11 +38,11 @@ class FormatParquet(FormatBase):
         # use default behavior, no additional prep needed
         return super()._prepare_records()
 
-    def _write(self) -> None:
+    def _write(self, contents: str = None) -> None:
         df = self.create_dataframe()
         try:
             ParquetWriter(
-                f"{self.full_qualified_key}-{self.file_iterator:04}.{self.extension}",
+                f"{self.fully_qualified_key}-{self.file_iterator:04}.{self.extension}",
                 df.schema,
                 compression='gzip',  # TODO: support multiple compression types
                 filesystem=self.file_system,

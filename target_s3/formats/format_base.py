@@ -5,6 +5,7 @@ import collections
 import logging
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
+from smart_open import open
 
 
 LOGGER = logging.getLogger("target-s3")
@@ -33,15 +34,39 @@ class FormatBase(metaclass=ABCMeta):
         self.config = config
         self.context = context
         self.extension = extension
+        self.compression = 'gz'  # TODO: need a list of compatible compression types
 
         self.aws_region = config.get('aws_region')  # required
         self.bucket = config.get('bucket')  # required
         self.prefix = config.get('prefix', None)
         self.logger = context['logger']
 
-        self.full_qualified_key = self.create_key()
-        self.logger.info(f"key: {self.full_qualified_key}")
-        self.file_iterator = 1
+        self.fully_qualified_key = self.create_key()
+        self.logger.info(f"key: {self.fully_qualified_key}")
+
+    @abstractmethod
+    def _write(self, contents: str = None) -> None:
+        """ Execute the write to S3. (default) """
+        # TODO: create dynamic cloud
+        # TODO: is there a better way to handle write contents ?
+        with open(f"s3://{self.fully_qualified_key}.{self.extension}.{self.compression}", "w") as f:
+            f.write(contents)
+
+    @abstractmethod
+    def run(self, records) -> None:
+        """ Execute the steps for preparing/writing records to S3. (default) """
+        self.records = records
+        # prepare records for writing
+        self._prepare_records()
+        # write records to S3
+        self._write()
+
+    @abstractmethod
+    def _prepare_records(self) -> None:
+        """ Execute record prep. (default) """
+        if self.config.get('flatten_records', None):
+            # flatten records
+            self.records = list(map(lambda record: self.flatten_record(record), self.records))
 
 
     def create_key(self) -> str:
@@ -79,28 +104,6 @@ class FormatBase(metaclass=ABCMeta):
         ret += f"{batch_start.second:02}" if grain <= 4 else ''
         ret += f"{batch_start.microsecond}" if grain <= 1 else ''
         return ret
-
-    @abstractmethod
-    def _prepare_records(self) -> None:
-        """ Execute record prep. (default) """
-        if self.config.get('flatten_records', None):
-            # flatten records
-            self.records = list(map(lambda record: self.flatten_record(record), self.records))
-
-    @abstractmethod
-    def _write(self) -> None:
-        """ Execute the write to S3. (default) """
-        # I don't think there should be a default here
-        raise NotImplementedError("No default behavior assigned to _write method.")
-
-    @abstractmethod
-    def run(self, records) -> None:
-        """ Execute the steps for preparing/writing records to S3. (default) """
-        self.records = records
-        # prepare records for writing
-        self._prepare_records()
-        # write records to S3
-        self._write()
 
     def flatten_key(self, k, parent_key, sep) -> str:
         """"""

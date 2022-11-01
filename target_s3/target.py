@@ -71,15 +71,20 @@ class Targets3(Target):
             allowed_values=DATE_GRAIN.keys()
         ),
         th.Property(
-            "object_format",
+            "format_type",
             th.StringType,
             description="The format of the storage object.",
-            allowed_values=sinks.OBJECT_TYPE.keys()
+            allowed_values=sinks.FORMAT_TYPE.keys()
         ),
         th.Property(
             "flatten_records",
             th.BooleanType,
             description="A flag indictating to flatten records.",
+        ),
+        th.Property(
+            "set_dtype_string",
+            th.BooleanType,
+            description="A flag indictating to set dytpe to string.",
         ),
     ).to_dict()
 
