@@ -78,7 +78,7 @@ class FormatBase(metaclass=ABCMeta):
             folder_path += self.create_folder_structure(batch_start, grain)
         if self.config['append_date_to_filename']:
             grain = DATE_GRAIN[self.config['append_date_to_filename_grain'].lower()]
-            file_name += f"-{self.create_file_structure(batch_start, grain)}"
+            file_name += f"{self.create_file_structure(batch_start, grain)}"
 
         return f"{folder_path}{file_name}"
 
@@ -98,7 +98,7 @@ class FormatBase(metaclass=ABCMeta):
         ret += f"{batch_start.year}" if grain <= 7 else ''
         ret += f"{batch_start.month:02}" if grain <= 6 else ''
         ret += f"{batch_start.day:02}" if grain <= 5 else ''
-        ret += f"{batch_start.hour:02}" if grain <= 4 else ''
+        ret += f"-{batch_start.hour:02}" if grain <= 4 else ''
         ret += f"{batch_start.minute:02}" if grain <= 3 else ''
         ret += f"{batch_start.second:02}" if grain <= 4 else ''
         ret += f"{batch_start.microsecond}" if grain <= 1 else ''
