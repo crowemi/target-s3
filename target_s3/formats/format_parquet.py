@@ -47,7 +47,6 @@ class FormatParquet(FormatBase):
                 compression='gzip',  # TODO: support multiple compression types
                 filesystem=self.file_system,
             ).write_table(df)
-            self.file_iterator += 1
         except Exception as e:
             self.logger.error('Failed to write parquet file to S3.')
             raise e
