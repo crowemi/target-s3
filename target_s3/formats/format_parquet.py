@@ -42,7 +42,7 @@ class FormatParquet(FormatBase):
         df = self.create_dataframe()
         try:
             ParquetWriter(
-                f"{self.fully_qualified_key}-{self.file_iterator:04}.{self.extension}",
+                f"{self.fully_qualified_key}.{self.extension}.{self.compression}",
                 df.schema,
                 compression='gzip',  # TODO: support multiple compression types
                 filesystem=self.file_system,
