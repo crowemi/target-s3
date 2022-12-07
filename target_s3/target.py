@@ -49,6 +49,11 @@ class Targets3(Target):
             description="The prefix for the key."
         ),
         th.Property(
+            "stream_name_path_override",
+            th.StringType,
+            description="The S3 key stream name override."
+        ),
+        th.Property(
             "append_date_to_prefix",
             th.BooleanType,
             description="A flag to append the date to the key prefix."
