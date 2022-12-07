@@ -86,6 +86,10 @@ class Targets3(Target):
             th.BooleanType,
             description="A flag indictating to set dytpe to string.",
         ),
+        th.Property(
+            "stream_maps",
+            th.ObjectType()
+        ),
     ).to_dict()
 
     default_sink_class = s3Sink
