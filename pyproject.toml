@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "target-s3"
-version = "0.1.2"
+version = "0.2.0"
 description = "`target-s3` is a Singer target for s3, built with the Meltano Singer SDK."
 authors = ["crowemi"]
 keywords = [
@@ -19,6 +19,7 @@ pandas = "^1.5.1"
 numpy = "^1.23.4"
 fsspec = "^2022.10.0"
 s3fs = "^2022.10.0"
+pymongo = "^4.3.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
@@ -29,6 +30,9 @@ pydocstyle = "^6.1.1"
 mypy = "^0.910"
 types-requests = "^2.26.1"
 isort = "^5.10.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.1.0"
 
 [tool.isort]
 profile = "black"
