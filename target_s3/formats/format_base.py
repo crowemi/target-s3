@@ -40,6 +40,7 @@ class FormatBase(metaclass=ABCMeta):
         self.bucket = config.get('bucket')  # required
         self.prefix = config.get('prefix', None)
         self.logger = context['logger']
+        self.stream_name_path_override = config.get('stream_name_path_override', None)
 
         self.fully_qualified_key = self.create_key()
         self.logger.info(f"key: {self.fully_qualified_key}")
@@ -71,7 +72,8 @@ class FormatBase(metaclass=ABCMeta):
 
     def create_key(self) -> str:
         batch_start = self.context['batch_start_time']
-        folder_path = f"{self.bucket}/{self.prefix}/{self.context['stream_name']}/"
+        stream_name = self.context['stream_name'] if self.stream_name_path_override is None else self.stream_name_path_override
+        folder_path = f"{self.bucket}/{self.prefix}/{stream_name}/"
         file_name = ''
         if self.config['append_date_to_prefix']:
             grain = DATE_GRAIN[self.config['append_date_to_prefix_grain'].lower()]
