@@ -36,6 +36,13 @@ class FormatParquet(FormatBase):
             self.logger.error(e)
             raise e
 
+    def validate(self, field, value):
+        if isinstance(value, dict) and not value:
+            # pyarrow can't process empty struct
+            return None
+
+        return value
+
     def create_dataframe(self) -> pyarrow.Table:
         """Creates a pyarrow Table object from the record set."""
         try:
@@ -43,7 +50,10 @@ class FormatParquet(FormatBase):
             for d in self.records:
                 fields = fields.union(d.keys())
             dataframe = pyarrow.table(
-                {f: [row.get(f) for row in self.records] for f in fields}
+                {
+                    f: [self.validate(f, row.get(f)) for row in self.records]
+                    for f in fields
+                }
             )
         except Exception as e:
             self.logger.error("Failed to create parquet dataframe.")
