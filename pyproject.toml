@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "target-s3"
-version = "0.5.0"
+version = "0.5.1"
 description = "`target-s3` is a Singer target for s3, built with the Meltano Singer SDK."
 authors = ["crowemi"]
 keywords = [
