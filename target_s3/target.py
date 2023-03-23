@@ -53,7 +53,13 @@ class Targets3(Target):
         th.Property(
             "stream_name_path_override",
             th.StringType,
-            description="The S3 key stream name override."
+            description="The S3 key stream name override.",
+        ),
+        th.Property(
+            "include_process_date",
+            th.BooleanType,
+            description="A flag indicating whether to append _process_date to record.",
+            default=False,
         ),
         th.Property(
             "append_date_to_prefix",

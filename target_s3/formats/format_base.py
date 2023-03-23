@@ -75,6 +75,8 @@ class FormatBase(metaclass=ABCMeta):
     @abstractmethod
     def _prepare_records(self) -> None:
         """Execute record prep. (default)"""
+        if self.config.get("include_process_date", None):
+            self.records = self.append_process_date(self.records)
         if self.config.get("flatten_records", None):
             # flatten records
             self.records = list(
@@ -154,3 +156,12 @@ class FormatBase(metaclass=ABCMeta):
             else:
                 items.append((new_key, json.dumps(v) if type(v) is list else v))
         return dict(items)
+
+    def append_process_date(self, records) -> dict:
+        """A function that appends the current UTC to every record"""
+
+        def process_date(record):
+            record["_process_date"] = datetime.utcnow().isoformat()
+            return record
+
+        return list(map(lambda x: process_date(x), records))
