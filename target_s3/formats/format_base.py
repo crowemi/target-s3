@@ -161,7 +161,7 @@ class FormatBase(metaclass=ABCMeta):
         """A function that appends the current UTC to every record"""
 
         def process_date(record):
-            record["_process_date"] = datetime.utcnow().isoformat()
+            record["_PROCESS_DATE"] = datetime.utcnow().isoformat()
             return record
 
         return list(map(lambda x: process_date(x), records))
