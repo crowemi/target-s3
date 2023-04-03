@@ -8,29 +8,19 @@ from target_s3.formats.format_base import FormatBase
 class FormatParquet(FormatBase):
     def __init__(self, config, context) -> None:
         super().__init__(config, context, "parquet")
-        self.create_filesystem(
-            config.get("aws_profile_name", None),
-            config.get("aws_region", None),
-        )
+        self.create_filesystem()
 
     def create_filesystem(
         self,
-        aws_profile: str = None,
-        aws_region: str = None,
     ) -> None:
         """Creates a pyarrow FileSystem object for accessing S3."""
-        aws_region = self.aws_region if aws_region is None else aws_region
         try:
-            if self.session:
-                self.file_system = fs.S3FileSystem(
-                    access_key=self.session.get_credentials().access_key,
-                    secret_key=self.session.get_credentials().secret_key,
-                    session_token=self.session.get_credentials().token,
-                )
-            else:
-                self.file_system = fs.S3FileSystem(
-                    region=aws_region,
-                )
+            self.file_system = fs.S3FileSystem(
+                access_key=self.session.get_credentials().access_key,
+                secret_key=self.session.get_credentials().secret_key,
+                session_token=self.session.get_credentials().token,
+                region=self.session.region_name,
+            )
         except Exception as e:
             self.logger.error("Failed to create parquet file system.")
             self.logger.error(e)
