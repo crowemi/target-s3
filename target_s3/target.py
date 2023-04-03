@@ -71,6 +71,7 @@ class Targets3(Target):
             th.StringType,
             description="The grain of the date to append to the prefix.",
             allowed_values=DATE_GRAIN.keys(),
+            required=True,
         ),
         th.Property(
             "append_date_to_filename",
@@ -82,12 +83,14 @@ class Targets3(Target):
             th.StringType,
             description="The grain of the date to append to the filename.",
             allowed_values=DATE_GRAIN.keys(),
+            required=True,
         ),
         th.Property(
             "format_type",
             th.StringType,
             description="The format of the storage object.",
             allowed_values=sinks.FORMAT_TYPE.keys(),
+            required=True,
         ),
         th.Property(
             "flatten_records",
