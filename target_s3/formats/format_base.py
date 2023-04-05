@@ -35,17 +35,33 @@ class FormatBase(metaclass=ABCMeta):
     def __init__(self, config: dict, context: dict, extension: str) -> None:
         # TODO: perhaps we should do some scrubbing here?
         self.config = config
+
+        self.format = config.get("format", None)
+        assert self.format, "FormatBase.__init__: Expecting format in configuration."
+
+        self.cloud_provider = config.get("cloud_provider", None)
+        assert (
+            self.cloud_provider
+        ), "FormatBase.__init__: Expecting cloud provider in configuration"
+
         self.context = context
         self.extension = extension
         self.compression = "gz"  # TODO: need a list of compatible compression types
 
         self.stream_name_path_override = config.get("stream_name_path_override", None)
 
-        self.bucket = config.get("bucket")  # required
-        self.session = Session(
-            region_name=config.get("aws_region"),
-            profile_name=config.get("aws_profile_name", None),
-        )
+        if self.cloud_provider.get("cloud_provider_type", None) == "aws":
+            aws_config = self.cloud_provider.get("aws", None)
+            assert aws_config, "FormatBase.__init__: Expecting aws in configuration"
+
+            self.bucket = aws_config.get("aws_bucket", None)  # required
+            self.session = Session(
+                aws_access_key_id=aws_config.get("aws_access_key_id", None),
+                aws_secret_access_key=aws_config.get("aws_secret_access_key", None),
+                region_name=aws_config.get("aws_region"),
+                profile_name=aws_config.get("aws_profile_name", None),
+            )
+
         self.prefix = config.get("prefix", None)
         self.logger = context["logger"]
         self.fully_qualified_key = self.create_key()
