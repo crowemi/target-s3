@@ -61,13 +61,13 @@ class Targets3(Target):
                         th.Property(
                             "aws_access_key_id",
                             th.StringType,
-                            required=True,
+                            required=False,
                             secret=True,
                         ),
                         th.Property(
                             "aws_secret_access_key",
                             th.StringType,
-                            required=True,
+                            required=False,
                             secret=True,
                         ),
                         th.Property(
@@ -78,7 +78,7 @@ class Targets3(Target):
                         th.Property(
                             "aws_profile_name",
                             th.StringType,
-                            required=True,
+                            required=False,
                         ),
                         th.Property(
                             "aws_bucket",
@@ -88,7 +88,7 @@ class Targets3(Target):
                         th.Property(
                             "aws_endpoint_override",
                             th.StringType,
-                            required=True,
+                            required=False,
                         ),
                     ),
                     required=False,
