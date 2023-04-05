@@ -8,19 +8,32 @@ from target_s3.formats.format_base import FormatBase
 class FormatParquet(FormatBase):
     def __init__(self, config, context) -> None:
         super().__init__(config, context, "parquet")
-        self.create_filesystem()
+        cloud_provider_config = config.get("cloud_provider", None)
+        cloud_provider_config_type = cloud_provider_config.get(
+            "cloud_provider_type", None
+        )
+        self.file_system = self.create_filesystem(
+            cloud_provider_config_type,
+            cloud_provider_config.get(cloud_provider_config_type, None),
+        )
 
     def create_filesystem(
         self,
-    ) -> None:
+        cloud_provider: str,
+        cloud_provider_config: dict,
+    ) -> fs.FileSystem:
         """Creates a pyarrow FileSystem object for accessing S3."""
         try:
-            self.file_system = fs.S3FileSystem(
-                access_key=self.session.get_credentials().access_key,
-                secret_key=self.session.get_credentials().secret_key,
-                session_token=self.session.get_credentials().token,
-                region=self.session.region_name,
-            )
+            if cloud_provider == "aws":
+                return fs.S3FileSystem(
+                    access_key=self.session.get_credentials().access_key,
+                    secret_key=self.session.get_credentials().secret_key,
+                    session_token=self.session.get_credentials().token,
+                    region=self.session.region_name,
+                    endpoint_override=cloud_provider_config.get(
+                        "aws_endpoint_override", None
+                    ),
+                )
         except Exception as e:
             self.logger.error("Failed to create parquet file system.")
             self.logger.error(e)

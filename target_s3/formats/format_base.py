@@ -61,6 +61,10 @@ class FormatBase(metaclass=ABCMeta):
                 region_name=aws_config.get("aws_region"),
                 profile_name=aws_config.get("aws_profile_name", None),
             )
+            self.client = self.session.client(
+                "s3",
+                endpoint_url=aws_config.get("aws_endpoint_override", None),
+            )
 
         self.prefix = config.get("prefix", None)
         self.logger = context["logger"]
@@ -75,7 +79,7 @@ class FormatBase(metaclass=ABCMeta):
         with open(
             f"s3://{self.fully_qualified_key}.{self.extension}.{self.compression}",
             "w",
-            transport_params={"client": self.session.client("s3")},
+            transport_params={"client": self.client},
         ) as f:
             f.write(contents)
 
