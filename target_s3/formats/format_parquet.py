@@ -39,8 +39,7 @@ class FormatParquet(FormatBase):
             self.logger.error(e)
             raise e
 
-    @staticmethod
-    def validate(schema: dict, field, value) -> dict:
+    def validate(self, schema: dict, field, value) -> dict:
         def unpack_dict(record):
             ret = dict()
             for field in record:
@@ -104,10 +103,7 @@ class FormatParquet(FormatBase):
             if self.format.get("format_parquet", None).get("validate", None):
                 schema = dict()
                 input = {
-                    f: [
-                        FormatParquet.validate(schema, f, row.get(f))
-                        for row in self.records
-                    ]
+                    f: [self.validate(schema, f, row.get(f)) for row in self.records]
                     for f in fields
                 }
             else:
