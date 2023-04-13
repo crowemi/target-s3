@@ -1,7 +1,9 @@
 {
     "format": {
         "format_type": "json",
-        "format_parquet": {},
+        "format_parquet": {
+            "validate": false
+        },
         "format_json": {},
         "format_csv": {}
     },

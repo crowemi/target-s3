@@ -31,7 +31,14 @@ class Targets3(Target):
                 ),
                 th.Property(
                     "format_parquet",
-                    th.ObjectType(),
+                    th.ObjectType(
+                        th.Property(
+                            "validate",
+                            th.BooleanType,
+                            required=False,
+                            default=False,
+                        ),
+                    ),
                     required=False,
                 ),
                 th.Property(

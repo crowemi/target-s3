@@ -1,5 +1,5 @@
 import pyarrow
-from pyarrow import fs
+from pyarrow import fs, Table
 from pyarrow.parquet import ParquetWriter
 
 from target_s3.formats.format_base import FormatBase
@@ -39,31 +39,87 @@ class FormatParquet(FormatBase):
             self.logger.error(e)
             raise e
 
-    def validate(self, field, value):
-        if isinstance(value, dict) and not value:
-            # pyarrow can't process empty struct
-            return None
+    @staticmethod
+    def validate(schema: dict, field, value) -> dict:
+        def unpack_dict(record):
+            ret = dict()
+            for field in record:
+                if isinstance(value[field], dict):
+                    ret[field] = unpack_dict(value[field])
+                else:
+                    ret[field] = {"type": type(value[field])}
+            return ret
+
+        def validate_dict(value):
+            fields = schema[field].get("fields")
+            for v in value:
+                # make sure value is in fields
+                if not v in fields:
+                    # add field and type
+                    if isinstance(value[v], dict):
+                        fields[v] = unpack_dict(value[v])
+                    else:
+                        fields[v] = {"type": type(value[v])}
+                else:
+                    # check data type
+                    if isinstance(value[v], dict):
+                        value[v] = unpack_dict(value[field])
+                    else:
+                        expected_type = fields[v].get("type")
+                        if not isinstance(value[v], expected_type):
+                            value[v] = expected_type(value[v])
+            return value
+
+        if field in schema:
+            # make sure datatypes align
+            if isinstance(value, dict):
+                if not value:
+                    # pyarrow can't process empty struct, return None
+                    return None
+                else:
+                    validate_dict(value)
+            else:
+                expected_type = schema[field].get("type")
+                if not isinstance(value, expected_type):
+                    # if the values don't match try to cast current value to expected type, this souldn't happen,
+                    # an error will occur during target instantiation.
+                    value = expected_type(value)
+
+        else:
+            # add new entry for field
+            if isinstance(value, dict):
+                schema[field] = {"type": type(value), "fields": unpack_dict(value)}
+            else:
+                schema[field] = {"type": type(value)}
 
         return value
 
-    def create_dataframe(self) -> pyarrow.Table:
+    def create_dataframe(self) -> Table:
         """Creates a pyarrow Table object from the record set."""
         try:
             fields = set()
             for d in self.records:
                 fields = fields.union(d.keys())
-            dataframe = pyarrow.table(
-                {
-                    f: [self.validate(f, row.get(f)) for row in self.records]
+
+            if self.format.get("format_parquet", None).get("validate", None):
+                schema = dict()
+                input = {
+                    f: [
+                        FormatParquet.validate(schema, f, row.get(f))
+                        for row in self.records
+                    ]
                     for f in fields
                 }
-            )
+            else:
+                input = {f: [row.get(f) for row in self.records] for f in fields}
+
+            ret = Table.from_pydict(mapping=input)
         except Exception as e:
             self.logger.error("Failed to create parquet dataframe.")
             self.logger.error(e)
             raise e
 
-        return dataframe
+        return ret
 
     def _prepare_records(self):
         # use default behavior, no additional prep needed
