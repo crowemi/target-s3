@@ -1,0 +1,27 @@
+{
+    "format": {
+        "format_type": "json",
+        "format_parquet": {},
+        "format_json": {},
+        "format_csv": {}
+    },
+    "cloud_provider": {
+        "cloud_provider_type": "aws",
+        "aws": {
+            "aws_access_key_id": "test",
+            "aws_secret_access_key": "test",
+            "aws_region": "us-west-2",
+            "aws_profile_name": "test-profile",
+            "aws_bucket": "test-bucket",
+            "aws_endpoint_override": "http://localhost:4566"
+        }
+    },
+    "prefix": "path/to/output",
+    "stream_name_path_override": "StreamName",
+    "include_process_date": true,
+    "append_date_to_prefix": false,
+    "append_date_to_prefix_grain": "day",
+    "append_date_to_filename": true,
+    "append_date_to_filename_grain": "microsecond",
+    "flatten_records": false
+}

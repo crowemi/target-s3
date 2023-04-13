@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from singer_sdk.target_base import Target
 from singer_sdk import typing as th
-from target_s3 import sinks
 
 from target_s3.formats.format_base import DATE_GRAIN
 
@@ -19,37 +18,88 @@ class Targets3(Target):
     name = "target-s3"
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "aws_access_key",
-            th.StringType,
-            secret=True,
-            description="The aws secret access key for auth to S3.",
+            "format",
+            th.ObjectType(
+                th.Property(
+                    "format_type",
+                    th.StringType,
+                    required=True,
+                    allowed_values=[
+                        "parquet",
+                        "json",
+                    ],  # TODO: configure this from class
+                ),
+                th.Property(
+                    "format_parquet",
+                    th.ObjectType(),
+                    required=False,
+                ),
+                th.Property(
+                    "format_json",
+                    th.ObjectType(),
+                    required=False,
+                ),
+                th.Property(
+                    "format_csv",
+                    th.ObjectType(),
+                    required=False,
+                ),
+            ),
         ),
         th.Property(
-            "aws_secret_access_key",
-            th.StringType,
-            secret=True,
-            required=False,
-            description="The aws secret access key for auth to S3.",
+            "cloud_provider",
+            th.ObjectType(
+                th.Property(
+                    "cloud_provider_type",
+                    th.StringType,
+                    required=True,
+                    allowed_values=["aws"],  # TODO: configure this from class
+                ),
+                th.Property(
+                    "aws",
+                    th.ObjectType(
+                        th.Property(
+                            "aws_access_key_id",
+                            th.StringType,
+                            required=False,
+                            secret=True,
+                        ),
+                        th.Property(
+                            "aws_secret_access_key",
+                            th.StringType,
+                            required=False,
+                            secret=True,
+                        ),
+                        th.Property(
+                            "aws_region",
+                            th.StringType,
+                            required=True,
+                        ),
+                        th.Property(
+                            "aws_profile_name",
+                            th.StringType,
+                            required=False,
+                        ),
+                        th.Property(
+                            "aws_bucket",
+                            th.StringType,
+                            required=True,
+                        ),
+                        th.Property(
+                            "aws_endpoint_override",
+                            th.StringType,
+                            required=False,
+                        ),
+                    ),
+                    required=False,
+                ),
+            ),
         ),
         th.Property(
-            "aws_region",
+            "prefix",
             th.StringType,
-            description="The aws region to target",
-            required=True,
+            description="The prefix for the key.",
         ),
-        th.Property(
-            "aws_profile_name",
-            th.StringType,
-            description="The aws profile name used with SSO.",
-            required=False,
-        ),
-        th.Property(
-            "bucket",
-            th.StringType,
-            description="The aws bucket to target.",
-            required=True,
-        ),
-        th.Property("prefix", th.StringType, description="The prefix for the key."),
         th.Property(
             "stream_name_path_override",
             th.StringType,
@@ -88,23 +138,10 @@ class Targets3(Target):
             default="day",
         ),
         th.Property(
-            "format_type",
-            th.StringType,
-            description="The format of the storage object.",
-            allowed_values=sinks.FORMAT_TYPE.keys(),
-            required=True,
-        ),
-        th.Property(
             "flatten_records",
             th.BooleanType,
             description="A flag indictating to flatten records.",
         ),
-        th.Property(
-            "set_dtype_string",
-            th.BooleanType,
-            description="A flag indictating to set dytpe to string.",
-        ),
-        th.Property("stream_maps", th.ObjectType()),
     ).to_dict()
 
     default_sink_class = s3Sink
