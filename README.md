@@ -40,7 +40,7 @@ Build with the [Meltano Target SDK](https://sdk.meltano.com).
     "flatten_records": false
 }
 ```
-`format`.`format_parquet`.`validate` [`Boolean`, default: `False`] - this flag determines whether the data types of incoming data elements should be validated. When set `True`, a schema is created from the first record and all subsequent records that don't match that data type are cast.
+`format.format_parquet.validate` [`Boolean`, default: `False`] - this flag determines whether the data types of incoming data elements should be validated. When set `True`, a schema is created from the first record and all subsequent records that don't match that data type are cast.
 
 ## Capabilities
 
