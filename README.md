@@ -4,25 +4,6 @@
 
 Build with the [Meltano Target SDK](https://sdk.meltano.com).
 
-<!--
-
-Developer TODO: Update the below as needed to correctly describe the install procedure. For instance, if you do not have a PyPi repo, or if you want users to directly install from your git repo, you can modify this step as appropriate.
-
-## Installation
-
-Install from PyPi:
-
-```bash
-pipx install target-s3
-```
-
-Install from GitHub:
-
-```bash
-pipx install git+https://github.com/ORG_NAME/target-s3.git@main
-```
-
--->
 
 ## Configuration
 
@@ -32,7 +13,9 @@ pipx install git+https://github.com/ORG_NAME/target-s3.git@main
 {
     "format": {
         "format_type": "json",
-        "format_parquet": {},
+        "format_parquet": {
+            "validate": "[true/false]"
+        },
         "format_json": {},
         "format_csv": {}
     },
@@ -57,17 +40,8 @@ pipx install git+https://github.com/ORG_NAME/target-s3.git@main
     "flatten_records": false
 }
 ```
+`format.format_parquet.validate` [`Boolean`, default: `False`] - this flag determines whether the data types of incoming data elements should be validated. When set `True`, a schema is created from the first record and all subsequent records that don't match that data type are cast.
 
-
-<!--
-Developer TODO: Provide a list of config options accepted by the target.
-
-This section can be created by copy-pasting the CLI output from:
-
-```
-target-s3 --about --format=markdown
-```
--->
 ## Capabilities
 
 * `about`
