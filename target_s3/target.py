@@ -78,6 +78,12 @@ class Targets3(Target):
                             secret=True,
                         ),
                         th.Property(
+                            "aws_session_token",
+                            th.StringType,
+                            required=False,
+                            secret=True,
+                        ),
+                        th.Property(
                             "aws_region",
                             th.StringType,
                             required=True,

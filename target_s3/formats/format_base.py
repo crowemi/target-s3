@@ -58,6 +58,7 @@ class FormatBase(metaclass=ABCMeta):
             self.session = Session(
                 aws_access_key_id=aws_config.get("aws_access_key_id", None),
                 aws_secret_access_key=aws_config.get("aws_secret_access_key", None),
+                aws_session_token=aws_config.get("aws_session_token", None),
                 region_name=aws_config.get("aws_region"),
                 profile_name=aws_config.get("aws_profile_name", None),
             )
