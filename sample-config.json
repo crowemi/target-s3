@@ -12,6 +12,7 @@
         "aws": {
             "aws_access_key_id": "test",
             "aws_secret_access_key": "test",
+            "aws_session_token": "test",
             "aws_region": "us-west-2",
             "aws_profile_name": "test-profile",
             "aws_bucket": "test-bucket",
