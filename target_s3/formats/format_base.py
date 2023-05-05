@@ -125,7 +125,7 @@ class FormatBase(metaclass=ABCMeta):
 
         return f"{folder_path}{file_name}"
 
-    def create_folder_structure(self, batch_start: datetime, grain: int, partition_name_enabled: boolean) -> str:
+    def create_folder_structure(self, batch_start: datetime, grain: int, partition_name_enabled: bool) -> str:
         ret = ""
         ret += f"{'year=' if partition_name_enabled        else  ''}{batch_start.year}/" if grain <= 7 else ""
         ret += f"{'month=' if partition_name_enabled       else  ''}{batch_start.month:02}/" if grain <= 6 else ""
