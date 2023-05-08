@@ -115,22 +115,25 @@ class FormatBase(metaclass=ABCMeta):
         file_name = ""
         if self.config["append_date_to_prefix"]:
             grain = DATE_GRAIN[self.config["append_date_to_prefix_grain"].lower()]
-            folder_path += self.create_folder_structure(batch_start, grain)
+            partition_name_enabled = False
+            if self.config["partition_name_enabled"]:
+                partition_name_enabled = self.config["partition_name_enabled"]   
+            folder_path += self.create_folder_structure(batch_start, grain, partition_name_enabled)
         if self.config["append_date_to_filename"]:
             grain = DATE_GRAIN[self.config["append_date_to_filename_grain"].lower()]
             file_name += f"{self.create_file_structure(batch_start, grain)}"
 
         return f"{folder_path}{file_name}"
 
-    def create_folder_structure(self, batch_start: datetime, grain: int) -> str:
+    def create_folder_structure(self, batch_start: datetime, grain: int, partition_name_enabled: bool) -> str:
         ret = ""
-        ret += f"{batch_start.year}/" if grain <= 7 else ""
-        ret += f"{batch_start.month:02}/" if grain <= 6 else ""
-        ret += f"{batch_start.day:02}/" if grain <= 5 else ""
-        ret += f"{batch_start.hour:02}/" if grain <= 4 else ""
-        ret += f"{batch_start.minute:02}/" if grain <= 3 else ""
-        ret += f"{batch_start.second:02}/" if grain <= 4 else ""
-        ret += f"{batch_start.microsecond}/" if grain <= 1 else ""
+        ret += f"{'year=' if partition_name_enabled        else  ''}{batch_start.year}/" if grain <= 7 else ""
+        ret += f"{'month=' if partition_name_enabled       else  ''}{batch_start.month:02}/" if grain <= 6 else ""
+        ret += f"{'day=' if partition_name_enabled         else  ''}{batch_start.day:02}/" if grain <= 5 else ""
+        ret += f"{'hour=' if partition_name_enabled        else  ''}{batch_start.hour:02}/" if grain <= 4 else ""
+        ret += f"{'minute=' if partition_name_enabled      else  ''}{batch_start.minute:02}/" if grain <= 3 else ""
+        ret += f"{'second=' if partition_name_enabled      else  ''}{batch_start.second:02}/" if grain <= 4 else ""
+        ret += f"{'microsecond=' if partition_name_enabled else  ''}{batch_start.microsecond}/" if grain <= 1 else ""
         return ret
 
     def create_file_structure(self, batch_start: datetime, grain: int) -> str:

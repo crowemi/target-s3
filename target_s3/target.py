@@ -131,6 +131,12 @@ class Targets3(Target):
             default=True,
         ),
         th.Property(
+            "partition_name_enabled",
+            th.BooleanType,
+            description="A flag (only works if append_date_to_prefix is enabled) to have partitioning name formatted e.g. 'year=2023/month=01/day=01'.",
+            default=False,
+        ),
+        th.Property(
             "append_date_to_prefix_grain",
             th.StringType,
             description="The grain of the date to append to the prefix.",
