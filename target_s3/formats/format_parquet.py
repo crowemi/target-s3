@@ -44,6 +44,8 @@ class FormatParquet(FormatBase):
 
         def unpack_dict(record) -> dict:
             ret = dict()
+            if len(record) == 0:
+                ret = {"type": type(str())}
             for field in record:
                 if isinstance(record[field], dict):
                     ret[field] = unpack_dict(record[field])
@@ -120,7 +122,7 @@ class FormatParquet(FormatBase):
             else:
                 expected_type = schema[field].get("type")
                 if not isinstance(value, expected_type):
-                    # if the values don't match try to cast current value to expected type, this souldn't happen,
+                    # if the values don't match try to cast current value to expected type, this shouldn't happen,
                     # an error will occur during target instantiation.
                     value = expected_type(value)
 
@@ -128,10 +130,17 @@ class FormatParquet(FormatBase):
             # add new entry for field
             if isinstance(value, dict):
                 schema[field] = {"type": type(value), "fields": unpack_dict(value)}
+                validate_dict(value, schema[field].get("fields"))
             elif isinstance(value, list):
                 schema[field] = {"type": type(value), "fields": unpack_list(value)}
+                validate_list(value, schema[field].get("fields"))
             else:
                 schema[field] = {"type": type(value)}
+                expected_type = schema[field].get("type")
+                if not isinstance(value, expected_type):
+                    # if the values don't match try to cast current value to expected type, this shouldn't happen,
+                    # an error will occur during target instantiation.
+                    value = expected_type(value)
 
         return value
 
