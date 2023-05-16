@@ -144,6 +144,12 @@ class FormatParquet(FormatBase):
 
         return value
 
+    def scrub(self, field, value):
+        if isinstance(value, dict) and not value:
+            # pyarrow can't process empty struct
+            return None
+        return value
+
     def create_dataframe(self) -> Table:
         """Creates a pyarrow Table object from the record set."""
         try:
@@ -159,7 +165,10 @@ class FormatParquet(FormatBase):
                     for f in fields
                 }
             else:
-                input = {f: [row.get(f) for row in self.records] for f in fields}
+                input = {
+                    f: [self.scrub(f, row.get(f)) for row in self.records]
+                    for f in fields
+                }
 
             ret = Table.from_pydict(mapping=input)
         except Exception as e:
