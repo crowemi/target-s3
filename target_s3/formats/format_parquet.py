@@ -144,7 +144,7 @@ class FormatParquet(FormatBase):
 
         return value
 
-    def scrub(self, field, value):
+    def scrub(self, value):
         if isinstance(value, dict) and not value:
             # pyarrow can't process empty struct
             return None
@@ -161,13 +161,15 @@ class FormatParquet(FormatBase):
             if format_parquet and format_parquet.get("validate", None) == True:
                 schema = dict()
                 input = {
-                    f: [self.validate(schema, f, row.get(f)) for row in self.records]
+                    f: [
+                        self.validate(schema, self.scrub(f), row.get(f))
+                        for row in self.records
+                    ]
                     for f in fields
                 }
             else:
                 input = {
-                    f: [self.scrub(f, row.get(f)) for row in self.records]
-                    for f in fields
+                    f: [self.scrub(row.get(f)) for row in self.records] for f in fields
                 }
 
             ret = Table.from_pydict(mapping=input)

@@ -14,7 +14,7 @@ Build with the [Meltano Target SDK](https://sdk.meltano.com).
     "format": {
         "format_type": "json",
         "format_parquet": {
-            "validate": "[true/false]"
+            "validate": "[true|false]"
         },
         "format_json": {},
         "format_csv": {}
