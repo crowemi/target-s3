@@ -41,8 +41,8 @@ class FormatParquet(FormatBase):
 
     def validate(self, schema: dict, field, value) -> dict:
         """
-        Validates data elements against a given schema and field. If the field is not in the schema, it will be added. 
-        If the value does not match the expected type in the schema, it will be cast to the expected type. 
+        Validates data elements against a given schema and field. If the field is not in the schema, it will be added.
+        If the value does not match the expected type in the schema, it will be cast to the expected type.
         The method returns the validated value.
 
         :param schema: A dictionary representing the schema to validate against.
@@ -53,6 +53,7 @@ class FormatParquet(FormatBase):
 
         def unpack_dict(record) -> dict:
             ret = dict()
+            # set empty dictionaries to type string
             if len(record) == 0:
                 ret = {"type": type(str())}
             for field in record:
@@ -153,7 +154,7 @@ class FormatParquet(FormatBase):
 
         return value
 
-    def scrub(self, value):
+    def clean(self, value):
         if isinstance(value, dict) and not value:
             # pyarrow can't process empty struct
             return None
@@ -168,17 +169,19 @@ class FormatParquet(FormatBase):
 
             format_parquet = self.format.get("format_parquet", None)
             if format_parquet and format_parquet.get("validate", None) == True:
+                # NOTE: we may could use schema to build a pyarrow schema https://arrow.apache.org/docs/python/generated/pyarrow.Schema.html
+                # and pass that into from_pydict(). The schema is inferred by pyarrow, but we could always be explicit about it.
                 schema = dict()
                 input = {
                     f: [
-                        self.validate(schema, self.scrub(f), row.get(f))
+                        self.validate(schema, self.clean(f), row.get(f))
                         for row in self.records
                     ]
                     for f in fields
                 }
             else:
                 input = {
-                    f: [self.scrub(row.get(f)) for row in self.records] for f in fields
+                    f: [self.clean(row.get(f)) for row in self.records] for f in fields
                 }
 
             ret = Table.from_pydict(mapping=input)
