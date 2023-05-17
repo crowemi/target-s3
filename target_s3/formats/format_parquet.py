@@ -40,7 +40,16 @@ class FormatParquet(FormatBase):
             raise e
 
     def validate(self, schema: dict, field, value) -> dict:
-        """Validates data elements."""
+        """
+        Validates data elements against a given schema and field. If the field is not in the schema, it will be added. 
+        If the value does not match the expected type in the schema, it will be cast to the expected type. 
+        The method returns the validated value.
+
+        :param schema: A dictionary representing the schema to validate against.
+        :param field: The field to validate.
+        :param value: The value to validate.
+        :return: The validated value.
+        """
 
         def unpack_dict(record) -> dict:
             ret = dict()
