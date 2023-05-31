@@ -3,6 +3,7 @@ from pyarrow import fs, Table
 from pyarrow.parquet import ParquetWriter
 
 from target_s3.formats.format_base import FormatBase
+import pandas as pd
 
 
 class FormatParquet(FormatBase):
@@ -50,115 +51,63 @@ class FormatParquet(FormatBase):
         :param value: The value to validate.
         :return: The validated value.
         """
-
-        def unpack_dict(record) -> dict:
-            ret = dict()
-            # set empty dictionaries to type string
-            if len(record) == 0:
-                ret = {"type": type(str())}
-            for field in record:
-                if isinstance(record[field], dict):
-                    ret[field] = unpack_dict(record[field])
-                elif isinstance(record[field], list):
-                    ret[field] = unpack_list(record[field])
-                else:
-                    ret[field] = {"type": type(record[field])}
-            return ret
-
-        def unpack_list(record) -> dict:
-            ret = dict()
-            for idx, value in enumerate(record):
-                if isinstance(record[idx], dict):
-                    ret[idx] = unpack_dict(value)
-                elif isinstance(record[idx], list):
-                    ret[idx] = unpack_list(value)
-                else:
-                    ret[idx] = {"type": type(value)}
-            return ret
-
-        def validate_dict(value, fields):
-            for v in value:
-                # make sure value is in fields
-                if not v in fields:
-                    # add field and type
-                    if isinstance(value[v], dict):
-                        fields[v] = unpack_dict(value[v])
-                    else:
-                        fields[v] = {"type": type(value[v])}
-                else:
-                    # check data type
-                    if isinstance(value[v], dict):
-                        value[v] = validate_dict(value[v], fields[v])
-                    if isinstance(value[v], list):
-                        value[v] = validate_list(value[v], fields[v])
-                    else:
-                        expected_type = fields[v].get("type")
-                        if not isinstance(value[v], expected_type):
-                            value[v] = expected_type(value[v])
-            return value
-
-        def validate_list(value, fields):
-            for i, v in enumerate(value):
-                if not i in fields:
-                    # add field and type
-                    if isinstance(v, dict):
-                        fields[i] = unpack_dict(v)
-                    if isinstance(v, list):
-                        fields[i] = unpack_list(v)
-                    else:
-                        fields[i] = {"type": type(v)}
-                else:
-                    # validate
-                    if isinstance(v, dict):
-                        value[i] = validate_dict(v, fields[i])
-                    if isinstance(v, list):
-                        value[i] = validate_list(v, fields[i])
-                    else:
-                        expected_type = fields[i].get("type")
-                        if not isinstance(v, expected_type):
-                            value[i] = expected_type(v)
-            return value
-
-        if field in schema:
-            # make sure datatypes align
-            if isinstance(value, dict):
-                if not value:
-                    # pyarrow can't process empty struct, return None
-                    return None
-                else:
-                    validate_dict(value, schema[field].get("fields"))
-            elif isinstance(value, list):
-                validate_list(value, schema[field].get("fields"))
-            else:
-                expected_type = schema[field].get("type")
-                if not isinstance(value, expected_type):
-                    # if the values don't match try to cast current value to expected type, this shouldn't happen,
-                    # an error will occur during target instantiation.
-                    value = expected_type(value)
-
-        else:
-            # add new entry for field
-            if isinstance(value, dict):
-                schema[field] = {"type": type(value), "fields": unpack_dict(value)}
-                validate_dict(value, schema[field].get("fields"))
-            elif isinstance(value, list):
-                schema[field] = {"type": type(value), "fields": unpack_list(value)}
-                validate_list(value, schema[field].get("fields"))
-            else:
-                schema[field] = {"type": type(value)}
-                expected_type = schema[field].get("type")
-                if not isinstance(value, expected_type):
-                    # if the values don't match try to cast current value to expected type, this shouldn't happen,
-                    # an error will occur during target instantiation.
-                    value = expected_type(value)
-
-        return value
+        pass
 
     def sanitize(self, value):
         if isinstance(value, dict) and not value:
             # pyarrow can't process empty struct
             return None
         return value
+
+    def create_schema_types(
+        self,
+        record: dict,
+        schema: dict,
+    ):
+        for field in record:
+            if isinstance(record[field], dict):
+                # unpack dictionary
+                if field not in schema:
+                    # field isn't already in schema, create a new schema
+                    child_schema = dict()
+                    self.create_schema_types(record[field], child_schema)
+                    schema[field] = child_schema
+                else:
+                    if isinstance(schema[field], dict):
+                        # NOTE: this was causing an error when the field schema was NoneType
+                        self.create_schema_types(record[field], schema[field])
+                    else:
+                        # NOTE: DRY, same as above
+                        if schema[field] == type(None):
+                            # if the previously set schema type is None, we need to re-establish the dictionary definition
+                            child_schema = dict()
+                            self.create_schema_types(record[field], child_schema)
+                            schema[field] = child_schema
+                        else:
+                            # if the previously set schema type is not None, we need to set the definition to string
+                            schema[field] = str()
+
+            elif isinstance(record[field], list):
+                # unpack list
+                schema[field] = type(None)
+            else:
+                record_field_type = type(record[field])
+                # assign type to schema
+                if field not in schema:
+                    # field is not in schema, assign type
+                    schema[field] = record_field_type
+                else:
+                    schema_field_type = schema[field]
+                    if not schema_field_type == record_field_type:
+                        # what happens when the field type and schema type are different?
+                        pass
+        self.logger.debug(f"format_parquet.create_schema_types: end processing record.")
+
+    def create_schema(self, schema: dict):
+        """Create pyarrow schema from every data element within collection"""
+        self.logger.info("format_parquet.create_schema: start create schema.")
+        [self.create_schema_types(record, schema) for record in self.records]
+        self.logger.info("format_parquet.create_schema: end create schema.")
 
     def create_dataframe(self) -> Table:
         """Creates a pyarrow Table object from the record set."""
@@ -167,11 +116,15 @@ class FormatParquet(FormatBase):
             for d in self.records:
                 fields = fields.union(d.keys())
 
+            schema = dict()
+            # we need to create a schema for every field in the record set
+            self.create_schema(schema)
+            # we need to validate records against schema
+
             format_parquet = self.format.get("format_parquet", None)
             if format_parquet and format_parquet.get("validate", None) == True:
                 # NOTE: we may could use schema to build a pyarrow schema https://arrow.apache.org/docs/python/generated/pyarrow.Schema.html
                 # and pass that into from_pydict(). The schema is inferred by pyarrow, but we could always be explicit about it.
-                schema = dict()
                 input = {
                     f: [
                         self.validate(schema, self.sanitize(f), row.get(f))
@@ -200,12 +153,14 @@ class FormatParquet(FormatBase):
 
     def _write(self, contents: str = None) -> None:
         df = self.create_dataframe()
+        # df = Table.from_pandas(pd.DataFrame(self.records))
         try:
             ParquetWriter(
                 f"{self.fully_qualified_key}.{self.extension}",
                 df.schema,
-                compression="gzip",  # TODO: support multiple compression types
+                compression="gzip",  # TODO: support multiple compression types {‘NONE’, ‘SNAPPY’, ‘GZIP’, ‘BROTLI’, ‘LZ4’, ‘ZSTD’} https://arrow.apache.org/docs/python/generated/pyarrow.parquet.write_table.html#pyarrow.parquet.write_table
                 filesystem=self.file_system,
+                flavor="spark",
             ).write_table(df)
         except Exception as e:
             self.logger.error("Failed to write parquet file to S3.")
