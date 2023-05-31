@@ -40,18 +40,16 @@ class FormatParquet(FormatBase):
             self.logger.error(e)
             raise e
 
-    def validate(self, schema: dict, field, value) -> dict:
-        """
-        Validates data elements against a given schema and field. If the field is not in the schema, it will be added.
-        If the value does not match the expected type in the schema, it will be cast to the expected type.
-        The method returns the validated value.
-
-        :param schema: A dictionary representing the schema to validate against.
-        :param field: The field to validate.
-        :param value: The value to validate.
-        :return: The validated value.
-        """
-        pass
+    def validate(self, schema: dict) -> dict:
+        for record in self.records:
+            for field in record:
+                expected_type = schema[field]
+                actual_type = type(record[field])
+                if isinstance(actual_type, dict):
+                    pass
+                else:
+                    if expected_type != actual_type:
+                        print("d")
 
     def sanitize(self, value):
         if isinstance(value, dict) and not value:
@@ -85,11 +83,35 @@ class FormatParquet(FormatBase):
                             schema[field] = child_schema
                         else:
                             # if the previously set schema type is not None, we need to set the definition to string
+                            # TODO: log warning
                             schema[field] = str()
-
             elif isinstance(record[field], list):
                 # unpack list
-                schema[field] = type(None)
+                if field not in schema:
+                    # field isn't already in schema, create a new schema
+                    child_schema = list()
+                    if len(record[field]) > 0:
+                        for i, v in enumerate(record[field]):
+                            element_type = type(v)
+                            if isinstance(v, dict):
+                                # unpack dictionary
+                                child_dict = dict()
+                                self.create_schema_types(v, child_dict)
+                                child_schema.append(child_dict)
+                            elif isinstance(element_type, list):
+                                pass
+                            else:
+                                child_schema.append(element_type)
+                        schema[field] = child_schema
+                    else:
+                        schema[field] = type(None)
+                else:
+                    if len(record[field]) > 0:
+                        for i, v in enumerate(record[field]):
+                            if len(schema[field]) >= i:
+                                self.create_schema_types(v, schema[field][i])
+                            else:
+                                pass
             else:
                 record_field_type = type(record[field])
                 # assign type to schema
@@ -104,7 +126,7 @@ class FormatParquet(FormatBase):
         self.logger.debug(f"format_parquet.create_schema_types: end processing record.")
 
     def create_schema(self, schema: dict):
-        """Create pyarrow schema from every data element within collection"""
+        """Create schema from every data element within collection"""
         self.logger.info("format_parquet.create_schema: start create schema.")
         [self.create_schema_types(record, schema) for record in self.records]
         self.logger.info("format_parquet.create_schema: end create schema.")
@@ -116,15 +138,15 @@ class FormatParquet(FormatBase):
             for d in self.records:
                 fields = fields.union(d.keys())
 
-            schema = dict()
-            # we need to create a schema for every field in the record set
-            self.create_schema(schema)
-            # we need to validate records against schema
-
             format_parquet = self.format.get("format_parquet", None)
             if format_parquet and format_parquet.get("validate", None) == True:
                 # NOTE: we may could use schema to build a pyarrow schema https://arrow.apache.org/docs/python/generated/pyarrow.Schema.html
                 # and pass that into from_pydict(). The schema is inferred by pyarrow, but we could always be explicit about it.
+                schema = dict()
+                # we need to create a schema for every field in the record set
+                self.create_schema(schema)
+                # we need to validate records against schema
+                self.validate(schema)
                 input = {
                     f: [
                         self.validate(schema, self.sanitize(f), row.get(f))
@@ -133,12 +155,11 @@ class FormatParquet(FormatBase):
                     for f in fields
                 }
             else:
-                input = {
-                    f: [self.sanitize(row.get(f)) for row in self.records]
-                    for f in fields
-                }
+                # default should be pyarrow implied schema
+                input = {f: [row.get(f) for row in self.records] for f in fields}
 
             ret = Table.from_pydict(mapping=input)
+
         except Exception as e:
             self.logger.info(self.records)
             self.logger.error("Failed to create parquet dataframe.")
@@ -160,7 +181,6 @@ class FormatParquet(FormatBase):
                 df.schema,
                 compression="gzip",  # TODO: support multiple compression types {‘NONE’, ‘SNAPPY’, ‘GZIP’, ‘BROTLI’, ‘LZ4’, ‘ZSTD’} https://arrow.apache.org/docs/python/generated/pyarrow.parquet.write_table.html#pyarrow.parquet.write_table
                 filesystem=self.file_system,
-                flavor="spark",
             ).write_table(df)
         except Exception as e:
             self.logger.error("Failed to write parquet file to S3.")
