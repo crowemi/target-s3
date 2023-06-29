@@ -127,24 +127,24 @@ class FormatBase(metaclass=ABCMeta):
 
     def create_folder_structure(self, batch_start: datetime, grain: int, partition_name_enabled: bool) -> str:
         ret = ""
-        ret += f"{'year=' if partition_name_enabled        else  ''}{batch_start.year}/" if grain <= 7 else ""
-        ret += f"{'month=' if partition_name_enabled       else  ''}{batch_start.month:02}/" if grain <= 6 else ""
-        ret += f"{'day=' if partition_name_enabled         else  ''}{batch_start.day:02}/" if grain <= 5 else ""
-        ret += f"{'hour=' if partition_name_enabled        else  ''}{batch_start.hour:02}/" if grain <= 4 else ""
-        ret += f"{'minute=' if partition_name_enabled      else  ''}{batch_start.minute:02}/" if grain <= 3 else ""
-        ret += f"{'second=' if partition_name_enabled      else  ''}{batch_start.second:02}/" if grain <= 4 else ""
-        ret += f"{'microsecond=' if partition_name_enabled else  ''}{batch_start.microsecond}/" if grain <= 1 else ""
+        ret += f"{'year=' if partition_name_enabled        else  ''}{batch_start.year}/" if grain <= DATE_GRAIN["year"] else ""
+        ret += f"{'month=' if partition_name_enabled       else  ''}{batch_start.month:02}/" if grain <= DATE_GRAIN["month"] else ""
+        ret += f"{'day=' if partition_name_enabled         else  ''}{batch_start.day:02}/" if grain <= DATE_GRAIN["day"] else ""
+        ret += f"{'hour=' if partition_name_enabled        else  ''}{batch_start.hour:02}/" if grain <= DATE_GRAIN["hour"] else ""
+        ret += f"{'minute=' if partition_name_enabled      else  ''}{batch_start.minute:02}/" if grain <= DATE_GRAIN["minute"] else ""
+        ret += f"{'second=' if partition_name_enabled      else  ''}{batch_start.second:02}/" if grain <= DATE_GRAIN["second"] else ""
+        ret += f"{'microsecond=' if partition_name_enabled else  ''}{batch_start.microsecond}/" if grain <= DATE_GRAIN["microsecond"] else ""
         return ret
 
     def create_file_structure(self, batch_start: datetime, grain: int) -> str:
         ret = ""
-        ret += f"{batch_start.year}" if grain <= 7 else ""
-        ret += f"{batch_start.month:02}" if grain <= 6 else ""
-        ret += f"{batch_start.day:02}" if grain <= 5 else ""
-        ret += f"-{batch_start.hour:02}" if grain <= 4 else ""
-        ret += f"{batch_start.minute:02}" if grain <= 3 else ""
-        ret += f"{batch_start.second:02}" if grain <= 4 else ""
-        ret += f"{batch_start.microsecond}" if grain <= 1 else ""
+        ret += f"{batch_start.year}" if grain <= DATE_GRAIN["year"] else ""
+        ret += f"{batch_start.month:02}" if grain <= DATE_GRAIN["month"] else ""
+        ret += f"{batch_start.day:02}" if grain <= DATE_GRAIN["day"] else ""
+        ret += f"-{batch_start.hour:02}" if grain <= DATE_GRAIN["hour"] else ""
+        ret += f"{batch_start.minute:02}" if grain <= DATE_GRAIN["minute"] else ""
+        ret += f"{batch_start.second:02}" if grain <= DATE_GRAIN["second"] else ""
+        ret += f"{batch_start.microsecond}" if grain <= DATE_GRAIN["microsecond"] else ""
         return ret
 
     def flatten_key(self, k, parent_key, sep) -> str:
