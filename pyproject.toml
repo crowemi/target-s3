@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "target-s3"
-version = "1.0.6"
+version = "1.0.7"
 description = "`target-s3` is a Singer target for s3, built with the Meltano Singer SDK."
 authors = ["crowemi"]
 keywords = [
@@ -10,9 +10,9 @@ keywords = [
 license = "Apache 2.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11"
+python = ">=3.8,<3.12"
 requests = "^2.25.1"
-singer-sdk = "^0.13.0"
+singer-sdk = "^0.32.0"
 smart-open = {extras = ["s3"], version = "^6.2.0"}
 pyarrow = "^10.0.0"
 pandas = "^1.5.1"
