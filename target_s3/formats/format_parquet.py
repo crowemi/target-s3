@@ -160,6 +160,119 @@ class FormatParquet(FormatBase):
             return None
         return value
 
+    def create_batch_schema(self) -> pyarrow.schema:
+        """Generates schema from the records schema present in the tap.
+        This is effective way to declare schema instead of relying on pyarrow to
+        detect schema type.
+
+        Note: At level 0 (outermost level) any key that is of type datetime in record
+        is converted to datetime by base target class. Hence string at level 0 is handled with
+        type datetime.
+
+        :return: schema made from stream's schema definition
+        :rtype: pyarrow.schema
+        """
+
+        # TODO: handle non nullable types; by default nullable
+        def get_schema_from_array(items: dict, level: int):
+            """Returns item schema for an array.
+
+            :param items: items definition of array
+            :type items: dict
+            :param level: depth level of array in jsonschema
+            :type level: int
+            :return: detected datatype for all items of array.
+            :rtype: pyarrow datatype
+            """
+            type = items.get("type")
+            properties = items.get("properties")
+            items = items.get("items")
+            if "integer" in type:
+                return pyarrow.int64()
+            elif "number" in type:
+                return pyarrow.float64()
+            elif "string" in type:
+                return pyarrow.string()
+            elif "array" in type:
+                return pyarrow.list_(get_schema_from_array(items=items, level=level))
+            elif "object" in type:
+                return pyarrow.struct(
+                    get_schema_from_object(properties=properties, level=level + 1)
+                )
+            else:
+                return pyarrow.null()
+
+        def get_schema_from_object(properties: dict, level: int = 0):
+            """Returns schema for an object.
+
+            :param properties: properties definition of object
+            :type properties: dict
+            :param level: depth level of object in jsonschema
+            :type level: int
+            :return: detected fields for properties in object.
+            :rtype: pyarrow datatype
+            """
+            fields = []
+            for key, val in properties.items():
+                type = val["type"]
+                format = val.get("format")
+                if "integer" in type:
+                    fields.append(pyarrow.field(key, pyarrow.int64()))
+                elif "number" in type:
+                    fields.append(pyarrow.field(key, pyarrow.float64()))
+                elif "string" in type:
+                    if format and level == 0:
+                        # this is done to handle explicit datetime conversion
+                        # which happens only at level 1 of a record
+                        if format == "date":
+                            fields.append(pyarrow.field(key, pyarrow.date64()))
+                        elif format == "time":
+                            fields.append(pyarrow.field(key, pyarrow.time64()))
+                        else:
+                            fields.append(
+                                pyarrow.field(key, pyarrow.timestamp("s", tz="utc"))
+                            )
+                    else:
+                        fields.append(pyarrow.field(key, pyarrow.string()))
+                elif "array" in type:
+                    items = val.get("items")
+                    if items:
+                        item_type = get_schema_from_array(items=items, level=level)
+                        if item_type == pyarrow.null():
+                            self.logger.warn(
+                                f"""
+                                            key: {key} is defined as list of null, while this would be
+                                            correct for list of all null but it is better to define
+                                            exact item types for the list, if not null."""
+                            )
+                        fields.append(pyarrow.field(key, pyarrow.list_(item_type)))
+                    else:
+                        self.logger.warn(
+                            f"""
+                                        key: {key} is defined as list of null, while this would be
+                                        correct for list of all null but it is better to define
+                                        exact item types for the list, if not null."""
+                        )
+                        fields.append(pyarrow.field(key, pyarrow.list_(pyarrow.null())))
+                elif "object" in type:
+                    prop = val.get("properties")
+                    inner_fields = get_schema_from_object(
+                        properties=prop, level=level + 1
+                    )
+                    if not inner_fields:
+                        self.logger.warn(
+                            f"""
+                                        key: {key} has no fields defined, this may cause
+                                        saving parquet failure as parquet doesn't support
+                                        empty/null complex types [array, structs] """
+                        )
+                    fields.append(pyarrow.field(key, pyarrow.struct(inner_fields)))
+            return fields
+
+        properties = self.context["batch_schema"].get("properties")
+        schema = pyarrow.schema(get_schema_from_object(properties=properties))
+        return schema
+
     def create_dataframe(self) -> Table:
         """Creates a pyarrow Table object from the record set."""
         try:
@@ -185,7 +298,13 @@ class FormatParquet(FormatBase):
                     for f in fields
                 }
 
-            ret = Table.from_pydict(mapping=input)
+            if format_parquet and format_parquet.get("get_schema_from_tap", False):
+                ret = Table.from_pydict(
+                    mapping=input, schema=self.create_batch_schema()
+                )
+            else:
+                ret = Table.from_pydict(mapping=input)
+
         except Exception as e:
             self.logger.info(self.records)
             self.logger.error("Failed to create parquet dataframe.")
@@ -208,7 +327,13 @@ class FormatParquet(FormatBase):
                 filesystem=self.file_system,
             ).write_table(df)
         except Exception as e:
-            self.logger.error("Failed to write parquet file to S3.")
+            self.logger.error(e)
+            if type(e) is pyarrow.lib.ArrowNotImplementedError:
+                self.logger.error(
+                    """Failed to write parquet file to S3. Complex types [array, object] in schema cannot be left without type definition """
+                )
+            else:
+                self.logger.error("Failed to write parquet file to S3.")
             raise e
 
     def run(self) -> None:
