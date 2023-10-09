@@ -14,7 +14,7 @@ Build with the [Meltano Target SDK](https://sdk.meltano.com).
     "format": {
         "format_type": "json",
         "format_parquet": {
-            "validate": "[true|false]"
+            "validate": true|false
         },
         "format_json": {},
         "format_csv": {}
@@ -32,13 +32,14 @@ Build with the [Meltano Target SDK](https://sdk.meltano.com).
     },
     "prefix": "path/to/output",
     "stream_name_path_override": "StreamName",
-    "include_process_date": true,
-    "append_date_to_prefix": false,
-    "partition_name_enabled": false,
+    "include_process_date": true|false,
+    "append_date_to_prefix": true|false,
+    "partition_name_enabled": true|false,
     "append_date_to_prefix_grain": "day",
-    "append_date_to_filename": true,
+    "append_date_to_filename": true|false,
     "append_date_to_filename_grain": "microsecond",
-    "flatten_records": false
+    "flattening_enabled": true|false,
+    "flattening_max_depth": int
 }
 ```
 `format.format_parquet.validate` [`Boolean`, default: `False`] - this flag determines whether the data types of incoming data elements should be validated. When set `True`, a schema is created from the first record and all subsequent records that don't match that data type are cast.
