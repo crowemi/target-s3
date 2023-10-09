@@ -1,6 +1,8 @@
 """s3 target class."""
 
 from __future__ import annotations
+import decimal
+import json
 
 from singer_sdk.target_base import Target
 from singer_sdk import typing as th
@@ -47,7 +49,7 @@ class Targets3(Target):
                                          resulting parquet file based on taps. Doesn't \
                                          work with 'anyOf' types or when complex data is\
                                          not defined at element level. Doesn't work with \
-                                         validate option for now."
+                                         validate option for now.",
                         ),
                     ),
                     required=False,
