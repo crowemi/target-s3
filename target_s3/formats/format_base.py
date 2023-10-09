@@ -98,11 +98,6 @@ class FormatBase(metaclass=ABCMeta):
         """Execute record prep. (default)"""
         if self.config.get("include_process_date", None):
             self.records = self.append_process_date(self.records)
-        if self.config.get("flatten_records", None):
-            # flatten records
-            self.records = list(
-                map(lambda record: self.flatten_record(record), self.records)
-            )
 
     def create_key(self) -> str:
         batch_start = self.context["batch_start_time"]
@@ -146,40 +141,6 @@ class FormatBase(metaclass=ABCMeta):
         ret += f"{batch_start.second:02}" if grain <= DATE_GRAIN["second"] else ""
         ret += f"{batch_start.microsecond}" if grain <= DATE_GRAIN["microsecond"] else ""
         return ret
-
-    def flatten_key(self, k, parent_key, sep) -> str:
-        """"""
-        # TODO: standardize in the SDK?
-        full_key = parent_key + [k]
-        inflected_key = [n for n in full_key]
-        reducer_index = 0
-        while len(sep.join(inflected_key)) >= 255 and reducer_index < len(
-            inflected_key
-        ):
-            reduced_key = re.sub(
-                r"[a-z]", "", inflection.camelize(inflected_key[reducer_index])
-            )
-            inflected_key[reducer_index] = (
-                reduced_key
-                if len(reduced_key) > 1
-                else inflected_key[reducer_index][0:3]
-            ).lower()
-            reducer_index += 1
-
-        return sep.join(inflected_key)
-
-    def flatten_record(self, d, parent_key=[], sep="__") -> dict:
-        """"""
-        # TODO: standardize in the SDK?
-        items = []
-        for k in sorted(d.keys()):
-            v = d[k]
-            new_key = self.flatten_key(k, parent_key, sep)
-            if isinstance(v, collections.MutableMapping):
-                items.extend(self.flatten_record(v, parent_key + [k], sep=sep).items())
-            else:
-                items.append((new_key, json.dumps(v) if type(v) is list else v))
-        return dict(items)
 
     def append_process_date(self, records) -> dict:
         """A function that appends the current UTC to every record"""

@@ -156,11 +156,6 @@ class Targets3(Target):
             allowed_values=DATE_GRAIN.keys(),
             default="day",
         ),
-        th.Property(
-            "flatten_records",
-            th.BooleanType,
-            description="A flag indictating to flatten records.",
-        ),
     ).to_dict()
 
     default_sink_class = s3Sink
