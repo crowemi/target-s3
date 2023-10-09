@@ -1,25 +1,61 @@
 version: 1
 send_anonymous_usage_stats: false
-project_id: "target-s3"
+project_id: target-s3
 default_environment: test
 environments:
-  - name: test
+- name: test
 plugins:
   extractors: []
   loaders:
-    - name: "target-s3"
-      namespace: "target_s3"
-      pip_url: -e .
-      capabilities:
-        - about
-        - stream-maps
-        - record-flattening
-      config:
-        start_date: "2010-01-01T00:00:00Z"
-      settings:
-        # TODO: To configure using Meltano, declare settings and their types here:
-        - name: username
-        - name: password
-          kind: password
-        - name: start_date
-          value: "2010-01-01T00:00:00Z"
+  - name: target-s3
+    namespace: target_s3
+    pip_url: -e .
+    capabilities:
+    - about
+    - stream-maps
+    - record-flattening
+    settings:
+    - name: format.format_type
+    - name: format.format_parquet.validate
+      kind: boolean
+      value: false
+    - name: format.format_parquet.get_schema_from_tap
+      kind: boolean
+      value: false
+    - name: cloud_provider.cloud_provider_type
+      value: aws
+    - name: cloud_provider.aws.aws_access_key_id
+      kind: password
+    - name: cloud_provider.aws.aws_secret_access_key
+      kind: password
+    - name: cloud_provider.aws.aws_session_token
+      kind: password
+    - name: cloud_provider.aws.aws_region
+      kind: password
+    - name: cloud_provider.aws.aws_profile_name
+      kind: password
+    - name: cloud_provider.aws.aws_bucket
+      kind: password
+    - name: cloud_provider.aws.aws_endpoint_override
+    - name: prefix
+    - name: stream_name_path_override
+    - name: include_process_date
+      kind: boolean
+      value: false
+    - name: append_date_to_prefix
+      kind: boolean
+      value: true
+    - name: partition_name_enabled
+      kind: boolean
+      value: false
+    - name: append_date_to_prefix_grain
+      value: day
+    - name: append_date_to_filename
+      kind: boolean
+      value: true
+    - name: append_date_to_filename_grain
+      value: microsecond
+    - name: flatten_records
+      kind: boolean
+      value: false
+
