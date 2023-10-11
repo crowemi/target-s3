@@ -44,7 +44,7 @@ class s3Sink(BatchSink):
         # add stream name to context
         context["stream_name"] = self.stream_name
         context["logger"] = self.logger
-        context["batch_schema"] = self.schema
+        context["stream_schema"] = self.schema
         # creates new object for each batch
         format_type_client = format_type_factory(
             FORMAT_TYPE[self.format_type], self.config, context

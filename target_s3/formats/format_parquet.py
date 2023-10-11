@@ -16,6 +16,8 @@ class FormatParquet(FormatBase):
             cloud_provider_config_type,
             cloud_provider_config.get(cloud_provider_config_type, None),
         )
+        self.stream_schema = context.get("stream_schema", {})
+        self.parquet_schema = None
 
     def create_filesystem(
         self,
@@ -160,7 +162,7 @@ class FormatParquet(FormatBase):
             return None
         return value
 
-    def create_batch_schema(self) -> pyarrow.schema:
+    def create_schema(self) -> pyarrow.schema:
         """Generates schema from the records schema present in the tap.
         This is effective way to declare schema instead of relying on pyarrow to
         detect schema type.
@@ -269,44 +271,49 @@ class FormatParquet(FormatBase):
                     fields.append(pyarrow.field(key, pyarrow.struct(inner_fields)))
             return fields
 
-        properties = self.context["batch_schema"].get("properties")
-        schema = pyarrow.schema(get_schema_from_object(properties=properties))
-        return schema
+        properties = self.stream_schema.get("properties")
+        parquet_schema = pyarrow.schema(get_schema_from_object(properties=properties))
+        self.parquet_schema = parquet_schema
+        return parquet_schema
 
     def create_dataframe(self) -> Table:
         """Creates a pyarrow Table object from the record set."""
         try:
-            fields = set()
-            for d in self.records:
-                fields = fields.union(d.keys())
-
             format_parquet = self.format.get("format_parquet", None)
-            if format_parquet and format_parquet.get("validate", None) == True:
-                # NOTE: we may could use schema to build a pyarrow schema https://arrow.apache.org/docs/python/generated/pyarrow.Schema.html
-                # and pass that into from_pydict(). The schema is inferred by pyarrow, but we could always be explicit about it.
-                schema = dict()
-                input = {
-                    f: [
-                        self.validate(schema, self.sanitize(f), row.get(f))
-                        for row in self.records
-                    ]
-                    for f in fields
-                }
-            else:
-                input = {
-                    f: [self.sanitize(row.get(f)) for row in self.records]
-                    for f in fields
-                }
-
             if format_parquet and format_parquet.get("get_schema_from_tap", False):
+                parquet_schema = self.parquet_schema if self.parquet_schema else self.create_schema()
+                fields = set([property.name for property in parquet_schema])
+                input = {
+                        f: [self.sanitize(row.get(f)) for row in self.records]
+                        for f in fields
+                    }
+                
                 ret = Table.from_pydict(
-                    mapping=input, schema=self.create_batch_schema()
+                    mapping=input, schema=parquet_schema
                 )
             else:
+                fields = set()
+                for d in self.records:
+                    fields = fields.union(d.keys())
+                if format_parquet and format_parquet.get("validate", None) == True:
+                    # NOTE: we may could use schema to build a pyarrow schema https://arrow.apache.org/docs/python/generated/pyarrow.Schema.html
+                    # and pass that into from_pydict(). The schema is inferred by pyarrow, but we could always be explicit about it.
+                    schema = dict()
+                    input = {
+                        f: [
+                            self.validate(schema, self.sanitize(f), row.get(f))
+                            for row in self.records
+                        ]
+                        for f in fields
+                    }
+                else:
+                    input = {
+                        f: [self.sanitize(row.get(f)) for row in self.records]
+                        for f in fields
+                    }
                 ret = Table.from_pydict(mapping=input)
 
         except Exception as e:
-            self.logger.info(self.records)
             self.logger.error("Failed to create parquet dataframe.")
             self.logger.error(e)
             raise e
