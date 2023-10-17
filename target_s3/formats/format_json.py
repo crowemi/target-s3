@@ -1,7 +1,7 @@
-from json import dumps, JSONEncoder
 from datetime import datetime
 
 from bson import ObjectId
+from simplejson import JSONEncoder, dumps
 
 from target_s3.formats.format_base import FormatBase
 
@@ -27,7 +27,7 @@ class FormatJson(FormatBase):
         return super()._prepare_records()
 
     def _write(self) -> None:
-        return super()._write(dumps(self.records, cls=JsonSerialize))
+        return super()._write(dumps(self.records, cls=JsonSerialize, use_decimal=True))
 
     def run(self) -> None:
         # use default behavior, no additional run steps needed
