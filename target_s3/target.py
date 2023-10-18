@@ -1,6 +1,8 @@
 """s3 target class."""
 
 from __future__ import annotations
+import decimal
+import json
 
 from singer_sdk.target_base import Target
 from singer_sdk import typing as th
@@ -37,6 +39,17 @@ class Targets3(Target):
                             th.BooleanType,
                             required=False,
                             default=False,
+                        ),
+                        th.Property(
+                            "get_schema_from_tap",
+                            th.BooleanType,
+                            required=False,
+                            default=False,
+                            description="Set true if you want to declare schema of the\
+                                         resulting parquet file based on taps. Doesn't \
+                                         work with 'anyOf' types or when complex data is\
+                                         not defined at element level. Doesn't work with \
+                                         validate option for now.",
                         ),
                     ),
                     required=False,
@@ -159,6 +172,28 @@ class Targets3(Target):
     ).to_dict()
 
     default_sink_class = s3Sink
+
+    def deserialize_json(self, line: str) -> dict:
+        """Override base target's method to overcome Decimal cast,
+        only applied when generating parquet schema from tap schema.
+
+        :param line: serialized record from stream
+        :type line: str
+        :return: deserialized record
+        :rtype: dict
+        """
+        try:
+            self.format = self.config.get("format", None)
+            format_parquet = self.format.get("format_parquet", None)
+            if format_parquet and format_parquet.get("get_schema_from_tap", False):
+                return json.loads(line)  # type: ignore[no-any-return]
+            else:
+                return json.loads(  # type: ignore[no-any-return]
+                    line, parse_float=decimal.Decimal
+                )
+        except json.decoder.JSONDecodeError as exc:
+            self.logger.error("Unable to parse:\n%s", line, exc_info=exc)
+            raise
 
 
 if __name__ == "__main__":
