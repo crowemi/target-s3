@@ -277,6 +277,12 @@ class FormatParquet(FormatBase):
 
         properties = self.stream_schema.get("properties")
         parquet_schema = pyarrow.schema(get_schema_from_object(properties=properties))
+
+        # append process_date that is added in format_base
+        if self.config.get("include_process_date", None):
+            key = "_PROCESS_DATE"
+            parquet_schema = parquet_schema.append(pyarrow.field(key, pyarrow.timestamp("s", tz="utc")))
+
         self.parquet_schema = parquet_schema
         return parquet_schema
 
