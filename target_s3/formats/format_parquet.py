@@ -195,6 +195,8 @@ class FormatParquet(FormatBase):
                 return pyarrow.float64()
             elif "string" in type:
                 return pyarrow.string()
+            elif "boolean" in type:
+                return pyarrow.bool_()
             elif "array" in type:
                 return pyarrow.list_(get_schema_from_array(items=items, level=level))
             elif "object" in type:
@@ -222,6 +224,8 @@ class FormatParquet(FormatBase):
                     fields.append(pyarrow.field(key, pyarrow.int64()))
                 elif "number" in type:
                     fields.append(pyarrow.field(key, pyarrow.float64()))
+                elif "boolean" in type:
+                    fields.append(pyarrow.field(key, pyarrow.bool_()))
                 elif "string" in type:
                     if format and level == 0:
                         # this is done to handle explicit datetime conversion
