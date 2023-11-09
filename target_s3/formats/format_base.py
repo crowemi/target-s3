@@ -98,11 +98,6 @@ class FormatBase(metaclass=ABCMeta):
         """Execute record prep. (default)"""
         if self.config.get("include_process_date", None):
             self.records = self.append_process_date(self.records)
-        if self.config.get("flatten_records", None):
-            # flatten records
-            self.records = list(
-                map(lambda record: self.flatten_record(record), self.records)
-            )
 
     def create_key(self) -> str:
         batch_start = self.context["batch_start_time"]
@@ -117,23 +112,55 @@ class FormatBase(metaclass=ABCMeta):
             grain = DATE_GRAIN[self.config["append_date_to_prefix_grain"].lower()]
             partition_name_enabled = False
             if self.config["partition_name_enabled"]:
-                partition_name_enabled = self.config["partition_name_enabled"]   
-            folder_path += self.create_folder_structure(batch_start, grain, partition_name_enabled)
+                partition_name_enabled = self.config["partition_name_enabled"]
+            folder_path += self.create_folder_structure(
+                batch_start, grain, partition_name_enabled
+            )
         if self.config["append_date_to_filename"]:
             grain = DATE_GRAIN[self.config["append_date_to_filename_grain"].lower()]
             file_name += f"{self.create_file_structure(batch_start, grain)}"
 
         return f"{folder_path}{file_name}"
 
-    def create_folder_structure(self, batch_start: datetime, grain: int, partition_name_enabled: bool) -> str:
+    def create_folder_structure(
+        self, batch_start: datetime, grain: int, partition_name_enabled: bool
+    ) -> str:
         ret = ""
-        ret += f"{'year=' if partition_name_enabled        else  ''}{batch_start.year}/" if grain <= DATE_GRAIN["year"] else ""
-        ret += f"{'month=' if partition_name_enabled       else  ''}{batch_start.month:02}/" if grain <= DATE_GRAIN["month"] else ""
-        ret += f"{'day=' if partition_name_enabled         else  ''}{batch_start.day:02}/" if grain <= DATE_GRAIN["day"] else ""
-        ret += f"{'hour=' if partition_name_enabled        else  ''}{batch_start.hour:02}/" if grain <= DATE_GRAIN["hour"] else ""
-        ret += f"{'minute=' if partition_name_enabled      else  ''}{batch_start.minute:02}/" if grain <= DATE_GRAIN["minute"] else ""
-        ret += f"{'second=' if partition_name_enabled      else  ''}{batch_start.second:02}/" if grain <= DATE_GRAIN["second"] else ""
-        ret += f"{'microsecond=' if partition_name_enabled else  ''}{batch_start.microsecond}/" if grain <= DATE_GRAIN["microsecond"] else ""
+        ret += (
+            f"{'year=' if partition_name_enabled        else  ''}{batch_start.year}/"
+            if grain <= DATE_GRAIN["year"]
+            else ""
+        )
+        ret += (
+            f"{'month=' if partition_name_enabled       else  ''}{batch_start.month:02}/"
+            if grain <= DATE_GRAIN["month"]
+            else ""
+        )
+        ret += (
+            f"{'day=' if partition_name_enabled         else  ''}{batch_start.day:02}/"
+            if grain <= DATE_GRAIN["day"]
+            else ""
+        )
+        ret += (
+            f"{'hour=' if partition_name_enabled        else  ''}{batch_start.hour:02}/"
+            if grain <= DATE_GRAIN["hour"]
+            else ""
+        )
+        ret += (
+            f"{'minute=' if partition_name_enabled      else  ''}{batch_start.minute:02}/"
+            if grain <= DATE_GRAIN["minute"]
+            else ""
+        )
+        ret += (
+            f"{'second=' if partition_name_enabled      else  ''}{batch_start.second:02}/"
+            if grain <= DATE_GRAIN["second"]
+            else ""
+        )
+        ret += (
+            f"{'microsecond=' if partition_name_enabled else  ''}{batch_start.microsecond}/"
+            if grain <= DATE_GRAIN["microsecond"]
+            else ""
+        )
         return ret
 
     def create_file_structure(self, batch_start: datetime, grain: int) -> str:
@@ -144,42 +171,10 @@ class FormatBase(metaclass=ABCMeta):
         ret += f"-{batch_start.hour:02}" if grain <= DATE_GRAIN["hour"] else ""
         ret += f"{batch_start.minute:02}" if grain <= DATE_GRAIN["minute"] else ""
         ret += f"{batch_start.second:02}" if grain <= DATE_GRAIN["second"] else ""
-        ret += f"{batch_start.microsecond}" if grain <= DATE_GRAIN["microsecond"] else ""
+        ret += (
+            f"{batch_start.microsecond}" if grain <= DATE_GRAIN["microsecond"] else ""
+        )
         return ret
-
-    def flatten_key(self, k, parent_key, sep) -> str:
-        """"""
-        # TODO: standardize in the SDK?
-        full_key = parent_key + [k]
-        inflected_key = [n for n in full_key]
-        reducer_index = 0
-        while len(sep.join(inflected_key)) >= 255 and reducer_index < len(
-            inflected_key
-        ):
-            reduced_key = re.sub(
-                r"[a-z]", "", inflection.camelize(inflected_key[reducer_index])
-            )
-            inflected_key[reducer_index] = (
-                reduced_key
-                if len(reduced_key) > 1
-                else inflected_key[reducer_index][0:3]
-            ).lower()
-            reducer_index += 1
-
-        return sep.join(inflected_key)
-
-    def flatten_record(self, d, parent_key=[], sep="__") -> dict:
-        """"""
-        # TODO: standardize in the SDK?
-        items = []
-        for k in sorted(d.keys()):
-            v = d[k]
-            new_key = self.flatten_key(k, parent_key, sep)
-            if isinstance(v, collections.MutableMapping):
-                items.extend(self.flatten_record(v, parent_key + [k], sep=sep).items())
-            else:
-                items.append((new_key, json.dumps(v) if type(v) is list else v))
-        return dict(items)
 
     def append_process_date(self, records) -> dict:
         """A function that appends the current UTC to every record"""

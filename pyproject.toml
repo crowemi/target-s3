@@ -12,7 +12,12 @@ license = "Apache 2.0"
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
 requests = "^2.25.1"
+<<<<<<< HEAD
 singer-sdk = "^0.33.0"
+=======
+singer-sdk = "^0.32.0"
+simplejson = "*"
+>>>>>>> 8310ed963d58a9e62799238a54c3c318ce61400b
 smart-open = {extras = ["s3"], version = "^6.2.0"}
 pyarrow = "^10.0.0"
 pandas = "^1.5.1"

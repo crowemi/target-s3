@@ -49,7 +49,11 @@ class Targets3(Target):
                                          resulting parquet file based on taps. Doesn't \
                                          work with 'anyOf' types or when complex data is\
                                          not defined at element level. Doesn't work with \
+<<<<<<< HEAD
                                          validate option for now."
+=======
+                                         validate option for now.",
+>>>>>>> 8310ed963d58a9e62799238a54c3c318ce61400b
                         ),
                     ),
                     required=False,
@@ -168,11 +172,6 @@ class Targets3(Target):
             description="The grain of the date to append to the filename.",
             allowed_values=DATE_GRAIN.keys(),
             default="day",
-        ),
-        th.Property(
-            "flatten_records",
-            th.BooleanType,
-            description="A flag indictating to flatten records.",
         ),
     ).to_dict()
 
