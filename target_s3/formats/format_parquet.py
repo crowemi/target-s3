@@ -163,7 +163,7 @@ class FormatParquet(FormatBase):
         if isinstance(value, dict) and not value:
             # pyarrow can't process empty struct
             return None
-        if isinstance(value, str) and not value:
+        if isinstance(value, str):
             # pyarrow can't process empty struct
             try:
                 return value.encode("utf-16", "surrogatepass").decode("utf-16")
