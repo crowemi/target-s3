@@ -1,3 +1,4 @@
+import json
 from typing import List, Tuple, Union
 
 import pyarrow
@@ -162,6 +163,15 @@ class FormatParquet(FormatBase):
         if isinstance(value, dict) and not value:
             # pyarrow can't process empty struct
             return None
+        if isinstance(value, str) and not value:
+            # pyarrow can't process empty struct
+            try:
+                return value.encode("utf-16", "surrogatepass").decode("utf-16")
+            except Exception as e:
+                if e is UnicodeDecodeError:
+                    return json.dumps(value)
+                else:
+                    raise ValueError(f"Cannot process string value {value}")
         return value
 
     def create_schema(self) -> pyarrow.schema:
@@ -177,7 +187,7 @@ class FormatParquet(FormatBase):
         :rtype: pyarrow.schema
         """
 
-        def process_anyof_schema(anyOf: List) -> Tuple[List, Union[str,None]]:
+        def process_anyof_schema(anyOf: List) -> Tuple[List, Union[str, None]]:
             """This function takes in original array of anyOf's schema detected
             and reduces it to the detected schema, based on rules, right now
             just detects whether it is string or not.
