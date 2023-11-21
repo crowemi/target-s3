@@ -1,5 +1,7 @@
+from typing import List, Tuple, Union
+
 import pyarrow
-from pyarrow import fs, Table
+from pyarrow import Table, fs
 from pyarrow.parquet import ParquetWriter
 
 from target_s3.formats.format_base import FormatBase
@@ -175,6 +177,34 @@ class FormatParquet(FormatBase):
         :rtype: pyarrow.schema
         """
 
+        def process_anyof_schema(anyOf: List) -> Tuple[List, Union[str,None]]:
+            """This function takes in original array of anyOf's schema detected
+            and reduces it to the detected schema, based on rules, right now
+            just detects whether it is string or not.
+
+            :param anyOf: Multiple types of anyOf schema from original schema
+            :type anyOf: List
+            :return: Returns final schema detected from multiple anyOf and format
+            :rtype: Tuple[List, str|None]
+            """
+            types, formats = [], []
+            for val in anyOf:
+                typ = val.get("type")
+                if val.get("format"):
+                    formats.append(val["format"])
+                if type(typ) is not list:
+                    types.append(typ)
+                else:
+                    types.extend(typ)
+            types = set(types)
+            formats = list(set(formats))
+            ret_type = []
+            if "string" in types:
+                ret_type.append("string")
+            if "null" in types:
+                ret_type.append("null")
+            return ret_type, formats[0] if formats else None
+
         # TODO: handle non nullable types; by default nullable
         def get_schema_from_array(items: dict, level: int):
             """Returns item schema for an array.
@@ -187,8 +217,17 @@ class FormatParquet(FormatBase):
             :rtype: pyarrow datatype
             """
             type = items.get("type")
+            # if there's anyOf instead of single type
+            any_of_types = items.get("anyOf")
+            # if the items are objects
             properties = items.get("properties")
+            # if the items are an array itself
             items = items.get("items")
+
+            if any_of_types:
+                self.logger.info("array with anyof type schema detected.")
+                type, _ = process_anyof_schema(anyOf=any_of_types)
+
             if "integer" in type:
                 return pyarrow.int64()
             elif "number" in type:
@@ -218,8 +257,15 @@ class FormatParquet(FormatBase):
             """
             fields = []
             for key, val in properties.items():
-                type = val["type"]
-                format = val.get("format")
+                if "type" in val.keys():
+                    type = val["type"]
+                    format = val.get("format")
+                elif "anyOf" in val.keys():
+                    type, format = process_anyof_schema(val["anyOf"])
+                else:
+                    self.logger.warning("type information not given")
+                    type = ["string", "null"]
+
                 if "integer" in type:
                     fields.append(pyarrow.field(key, pyarrow.int64()))
                 elif "number" in type:
@@ -281,7 +327,9 @@ class FormatParquet(FormatBase):
         # append process_date that is added in format_base
         if self.config.get("include_process_date", None):
             key = "_PROCESS_DATE"
-            parquet_schema = parquet_schema.append(pyarrow.field(key, pyarrow.timestamp("s", tz="utc")))
+            parquet_schema = parquet_schema.append(
+                pyarrow.field(key, pyarrow.timestamp("s", tz="utc"))
+            )
 
         self.parquet_schema = parquet_schema
         return parquet_schema
@@ -291,16 +339,16 @@ class FormatParquet(FormatBase):
         try:
             format_parquet = self.format.get("format_parquet", None)
             if format_parquet and format_parquet.get("get_schema_from_tap", False):
-                parquet_schema = self.parquet_schema if self.parquet_schema else self.create_schema()
+                parquet_schema = (
+                    self.parquet_schema if self.parquet_schema else self.create_schema()
+                )
                 fields = set([property.name for property in parquet_schema])
                 input = {
-                        f: [self.sanitize(row.get(f)) for row in self.records]
-                        for f in fields
-                    }
-                
-                ret = Table.from_pydict(
-                    mapping=input, schema=parquet_schema
-                )
+                    f: [self.sanitize(row.get(f)) for row in self.records]
+                    for f in fields
+                }
+
+                ret = Table.from_pydict(mapping=input, schema=parquet_schema)
             else:
                 fields = set()
                 for d in self.records:
@@ -356,4 +404,3 @@ class FormatParquet(FormatBase):
     def run(self) -> None:
         # use default behavior, no additional run steps needed
         return super().run(self.context["records"])
-    
