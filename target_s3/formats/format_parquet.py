@@ -168,6 +168,7 @@ class FormatParquet(FormatBase):
             try:
                 return value.encode("utf-16", "surrogatepass").decode("utf-16")
             except Exception as e:
+                self.logger.warning("surrogate encoding failed, serializing string")
                 return json.dumps(value)
         return value
 
