@@ -168,10 +168,7 @@ class FormatParquet(FormatBase):
             try:
                 return value.encode("utf-16", "surrogatepass").decode("utf-16")
             except Exception as e:
-                if e is UnicodeDecodeError:
-                    return json.dumps(value)
-                else:
-                    raise ValueError(f"Cannot process string value {value}")
+                return json.dumps(value)
         return value
 
     def create_schema(self) -> pyarrow.schema:
