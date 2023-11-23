@@ -49,7 +49,7 @@ class Targets3(Target):
                                          resulting parquet file based on taps. Doesn't \
                                          work with 'anyOf' types or when complex data is\
                                          not defined at element level. Doesn't work with \
-                                         validate option for now.",
+                                         validate option for now."
                         ),
                     ),
                     required=False,
