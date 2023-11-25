@@ -18,8 +18,6 @@ FORMAT_TYPE = {"parquet": FormatParquet, "csv": FormatCsv, "json": FormatJson}
 class s3Sink(BatchSink):
     """s3 target sink class."""
 
-    MAX_SIZE = 10000  # Max records to write in one batch
-
     def __init__(
         self,
         target: any,
@@ -38,6 +36,15 @@ class s3Sink(BatchSink):
                 )
         else:
             raise Exception("No file type supplied.")
+
+    @property
+    def max_size(self) -> int:
+        """Get maximum batch size.
+
+        Returns:
+            Maximum batch size
+        """
+        return self.config.get("batch_size", 10000)
 
     def process_batch(self, context: dict) -> None:
         """Write out any prepped records and return once fully written."""

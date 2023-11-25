@@ -39,7 +39,9 @@ Build with the [Meltano Target SDK](https://sdk.meltano.com).
     "append_date_to_filename": true|false,
     "append_date_to_filename_grain": "microsecond",
     "flattening_enabled": true|false,
-    "flattening_max_depth": int
+    "flattening_max_depth": int,
+    "max_batch_age": int,
+    "max_batch_size": int
 }
 ```
 `format.format_parquet.validate` [`Boolean`, default: `False`] - this flag determines whether the data types of incoming data elements should be validated. When set `True`, a schema is created from the first record and all subsequent records that don't match that data type are cast.

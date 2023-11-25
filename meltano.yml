@@ -58,4 +58,8 @@ plugins:
     - name: flatten_records
       kind: boolean
       value: false
+    - name: max_batch_age
+      value: 5
+    - name: max_batch_size
+      value: 10000
 

@@ -28,5 +28,7 @@
     "append_date_to_filename": true,
     "append_date_to_filename_grain": "microsecond",
     "flattening_enabled": false,
-    "flattening_max_depth": 1
+    "flattening_max_depth": 1,
+    "max_batch_age": 5,
+    "max_batch_size": 10000
 }
