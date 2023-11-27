@@ -169,9 +169,27 @@ class Targets3(Target):
             allowed_values=DATE_GRAIN.keys(),
             default="day",
         ),
+        th.Property(
+            "max_batch_age",
+            th.NumberType,
+            description="Maximum time in minutes between state messages when records are streamed in.",
+            required=False,
+            default=5.0,
+        ),
+        th.Property(
+            "max_batch_size",
+            th.IntegerType,
+            description="Maximum size of batches when records are streamed in.",
+            required=False,
+            default=10000,
+        ),
     ).to_dict()
 
     default_sink_class = s3Sink
+
+    @property
+    def _MAX_RECORD_AGE_IN_MINUTES(self) -> float:  # type: ignore
+        return float(self.config.get("max_batch_age", 5.0))
 
     def deserialize_json(self, line: str) -> dict:
         """Override base target's method to overcome Decimal cast,
