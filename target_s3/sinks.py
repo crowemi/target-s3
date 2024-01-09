@@ -44,7 +44,7 @@ class s3Sink(BatchSink):
         Returns:
             Maximum batch size
         """
-        return self.config.get("batch_size", 10000)
+        return self.config.get("max_batch_size", 10000)
 
     def process_batch(self, context: dict) -> None:
         """Write out any prepped records and return once fully written."""
