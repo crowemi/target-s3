@@ -15,7 +15,7 @@ class FormatPlaintext(FormatBase):
         return super()._prepare_records()
 
     def _write(self) -> None:
-        return super()._write("\n".join(self.records))
+        return super()._write(self.records)
 
     def run(self) -> None:
         # use default behavior, no additional run steps needed
