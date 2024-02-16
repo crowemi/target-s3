@@ -67,10 +67,11 @@ class FormatBase(metaclass=ABCMeta):
                 endpoint_url=aws_config.get("aws_endpoint_override", None),
             )
 
+        steam_name: str = self.context["stream_name"]
         self.prefix = config.get("prefix", None)
         self.logger = context["logger"]
         self.fully_qualified_key = (
-            self.context["stream_name"]
+            f"{self.bucket}/{self.prefix}/{steam_name}"
             if config.get("use_raw_stream_name")
             else self.create_key()
         )
