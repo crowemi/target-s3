@@ -29,7 +29,7 @@ class Targets3(Target):
                     allowed_values=[
                         "parquet",
                         "json",
-                        "plaintext",
+                        "jsonl",
                     ],  # TODO: configure this from class
                 ),
                 th.Property(
