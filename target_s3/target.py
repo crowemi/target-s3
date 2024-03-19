@@ -29,6 +29,7 @@ class Targets3(Target):
                     allowed_values=[
                         "parquet",
                         "json",
+                        "jsonl",
                     ],  # TODO: configure this from class
                 ),
                 th.Property(
@@ -135,6 +136,12 @@ class Targets3(Target):
             "include_process_date",
             th.BooleanType,
             description="A flag indicating whether to append _process_date to record.",
+            default=False,
+        ),
+        th.Property(
+            "use_raw_stream_name",
+            th.BooleanType,
+            description="A flag to force the filename to be identical to the stream name.",
             default=False,
         ),
         th.Property(

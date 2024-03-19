@@ -35,6 +35,7 @@ Build with the [Meltano Target SDK](https://sdk.meltano.com).
     "include_process_date": true|false,
     "append_date_to_prefix": true|false,
     "partition_name_enabled": true|false,
+    "use_raw_stream_name": true|false,
     "append_date_to_prefix_grain": "day",
     "append_date_to_filename": true|false,
     "append_date_to_filename_grain": "microsecond",

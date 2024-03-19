@@ -67,9 +67,14 @@ class FormatBase(metaclass=ABCMeta):
                 endpoint_url=aws_config.get("aws_endpoint_override", None),
             )
 
+        steam_name: str = self.context["stream_name"]
         self.prefix = config.get("prefix", None)
         self.logger = context["logger"]
-        self.fully_qualified_key = self.create_key()
+        self.fully_qualified_key = (
+            f"{self.bucket}/{self.prefix}/{steam_name}"
+            if config.get("use_raw_stream_name")
+            else self.create_key()
+        )
         self.logger.info(f"key: {self.fully_qualified_key}")
 
     @abstractmethod
@@ -78,7 +83,7 @@ class FormatBase(metaclass=ABCMeta):
         # TODO: create dynamic cloud
         # TODO: is there a better way to handle write contents ?
         with open(
-            f"s3://{self.fully_qualified_key}.{self.extension}.{self.compression}",
+            f"s3://{self.fully_qualified_key}",
             "w",
             transport_params={"client": self.client},
         ) as f:
@@ -120,7 +125,7 @@ class FormatBase(metaclass=ABCMeta):
             grain = DATE_GRAIN[self.config["append_date_to_filename_grain"].lower()]
             file_name += f"{self.create_file_structure(batch_start, grain)}"
 
-        return f"{folder_path}{file_name}"
+        return f"{folder_path}{file_name}.{self.extension}.{self.compression}"
 
     def create_folder_structure(
         self, batch_start: datetime, grain: int, partition_name_enabled: bool
