@@ -1,19 +1,12 @@
-from datetime import datetime
+from functools import partial
 
-from bson import ObjectId
-from simplejson import JSONEncoder, dumps
+import simplejson as json
 
 from target_s3.formats.format_base import FormatBase
 
+from .format_json import JsonSerialize
 
-class JsonSerialize(JSONEncoder):
-    def default(self, obj: any) -> any:
-        if isinstance(obj, ObjectId):
-            return str(obj)
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        else:
-            raise TypeError(f"Type {type(obj)} not serializable")
+dumps = partial(json.dumps, cls=JsonSerialize)
 
 
 class FormatJsonl(FormatBase):
@@ -26,7 +19,7 @@ class FormatJsonl(FormatBase):
         return super()._prepare_records()
 
     def _write(self) -> None:
-        return super()._write('\n'.join(map(dumps, self.records)))
+        return super()._write("\n".join(map(dumps, self.records)))
 
     def run(self) -> None:
         # use default behavior, no additional run steps needed
