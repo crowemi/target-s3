@@ -20,7 +20,6 @@ DATE_GRAIN = {
     "second": 2,
     "microsecond": 1,
 }
-COMPRESSION = {}
 
 
 def format_type_factory(object_type_class, *pargs, **kargs):
@@ -46,7 +45,8 @@ class FormatBase(metaclass=ABCMeta):
 
         self.context = context
         self.extension = extension
-        self.compression = "gz"  # TODO: need a list of compatible compression types
+        #Read the compression type from the config
+        self.compression = config.get("compression", None)
 
         self.stream_name_path_override = config.get("stream_name_path_override", None)
 
@@ -124,8 +124,11 @@ class FormatBase(metaclass=ABCMeta):
         if self.config["append_date_to_filename"]:
             grain = DATE_GRAIN[self.config["append_date_to_filename_grain"].lower()]
             file_name += f"{self.create_file_structure(batch_start, grain)}"
-
-        return f"{folder_path}{file_name}.{self.extension}.{self.compression}"
+        #Avoids none in filename
+        if self.compression == "none":
+            return f"{folder_path}{file_name}.{self.extension}"
+        else:
+            return f"{folder_path}{file_name}.{self.compression}.{self.extension}"
 
     def create_folder_structure(
         self, batch_start: datetime, grain: int, partition_name_enabled: bool

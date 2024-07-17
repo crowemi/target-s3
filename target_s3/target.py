@@ -68,6 +68,14 @@ class Targets3(Target):
             ),
         ),
         th.Property(
+            "compression",
+            th.StringType,
+            description="The compression type to use.",
+            required=False,
+            allowed_values=["none", "gzip", "snappy","brotli","lz4", "zstd"],
+            default="snappy",
+        ),
+        th.Property(
             "cloud_provider",
             th.ObjectType(
                 th.Property(
