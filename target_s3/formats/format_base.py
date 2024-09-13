@@ -1,14 +1,10 @@
-import re
-import inflection
-import json
-import collections
 import logging
-from datetime import datetime
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
+from pathlib import PurePosixPath
 
 from boto3 import Session
 from smart_open import open
-
 
 LOGGER = logging.getLogger("target-s3")
 DATE_GRAIN = {
@@ -67,11 +63,11 @@ class FormatBase(metaclass=ABCMeta):
                 endpoint_url=aws_config.get("aws_endpoint_override", None),
             )
 
-        steam_name: str = self.context["stream_name"]
-        self.prefix = config.get("prefix", None)
+        stream_name: str = self.context["stream_name"]
+        self.prefix = config.get("prefix", "")
         self.logger = context["logger"]
         self.fully_qualified_key = (
-            f"{self.bucket}/{self.prefix}/{steam_name}"
+            PurePosixPath(self.bucket, self.prefix, stream_name)
             if config.get("use_raw_stream_name")
             else self.create_key()
         )
@@ -111,21 +107,20 @@ class FormatBase(metaclass=ABCMeta):
             if self.stream_name_path_override is None
             else self.stream_name_path_override
         )
-        folder_path = f"{self.bucket}/{self.prefix}/{stream_name}/"
-        file_name = ""
+        file_path = PurePosixPath(self.bucket, self.prefix, stream_name)
         if self.config["append_date_to_prefix"]:
             grain = DATE_GRAIN[self.config["append_date_to_prefix_grain"].lower()]
             partition_name_enabled = False
             if self.config["partition_name_enabled"]:
                 partition_name_enabled = self.config["partition_name_enabled"]
-            folder_path += self.create_folder_structure(
+            file_path /= self.create_folder_structure(
                 batch_start, grain, partition_name_enabled
             )
         if self.config["append_date_to_filename"]:
             grain = DATE_GRAIN[self.config["append_date_to_filename_grain"].lower()]
-            file_name += f"{self.create_file_structure(batch_start, grain)}"
+            file_path /= self.create_file_structure(batch_start, grain)
 
-        return f"{folder_path}{file_name}.{self.extension}.{self.compression}"
+        return f"{file_path}.{self.extension}.{self.compression}"
 
     def create_folder_structure(
         self, batch_start: datetime, grain: int, partition_name_enabled: bool
