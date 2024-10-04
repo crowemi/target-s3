@@ -1,0 +1,44 @@
+name: CI
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      minio:
+        image: minio/minio
+        ports:
+          - 9000:9000
+        options: >-
+          --name minio
+          -v /data:/data
+          -v /config:/root/.minio
+          server /data
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: "1.8.2"
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Create test bucket
+        run: |
+          sudo apt-get install -y mc
+          mc alias set myminio http://localhost:9000 minioadmin minioadmin
+          mc mb myminio/test-bucket
+
+      - name: Run tests
+        run: poetry run pytest
