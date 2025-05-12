@@ -112,7 +112,7 @@ class FormatBase(metaclass=ABCMeta):
             else self.stream_name_path_override
         )
         folder_path = f"{self.bucket}/{self.prefix}/{stream_name}/"
-        file_name = ""
+        file_name = stream_name
         if self.config["append_date_to_prefix"]:
             grain = DATE_GRAIN[self.config["append_date_to_prefix_grain"].lower()]
             partition_name_enabled = False
