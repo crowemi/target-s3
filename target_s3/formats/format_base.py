@@ -20,7 +20,6 @@ DATE_GRAIN = {
     "second": 2,
     "microsecond": 1,
 }
-COMPRESSION = {}
 
 
 def format_type_factory(object_type_class, *pargs, **kargs):
@@ -46,7 +45,6 @@ class FormatBase(metaclass=ABCMeta):
 
         self.context = context
         self.extension = extension
-        self.compression = "gz"  # TODO: need a list of compatible compression types
 
         self.stream_name_path_override = config.get("stream_name_path_override", None)
         self.partition_by = config.get("partition_by", [])
@@ -108,7 +106,7 @@ class FormatBase(metaclass=ABCMeta):
     def create_key(self) -> str:
         batch_start = self.context["batch_start_time"]
         stream_name = (
-            self.context["stream_name"]
+            self.context["stream_name"].replace("dbo-", "", 1)
             if self.stream_name_path_override is None
             else self.stream_name_path_override
         )
@@ -117,7 +115,7 @@ class FormatBase(metaclass=ABCMeta):
         if self.partition_by:
             # partition_by values are inserted as folders after the stream name
             partition_path = "/".join(self.partition_by) + "/"
-        folder_path = f"{self.bucket}/{self.prefix}/{stream_name}/" + partition_path
+        folder_path = f"{self.bucket}/{self.prefix}/{stream_name}__" + partition_path
         file_name = ""
         if self.config["append_date_to_prefix"]:
             grain = DATE_GRAIN[self.config["append_date_to_prefix_grain"].lower()]
@@ -131,7 +129,7 @@ class FormatBase(metaclass=ABCMeta):
             grain = DATE_GRAIN[self.config["append_date_to_filename_grain"].lower()]
             file_name += f"{self.create_file_structure(batch_start, grain)}"
 
-        return f"{folder_path}{file_name}.{self.extension}.{self.compression}"
+        return f"{folder_path}{file_name}.{self.extension}"
 
     def create_folder_structure(
         self, batch_start: datetime, grain: int, partition_name_enabled: bool
