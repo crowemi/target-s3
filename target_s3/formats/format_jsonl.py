@@ -26,7 +26,11 @@ class FormatJsonl(FormatBase):
         return super()._prepare_records()
 
     def _write(self) -> None:
-        return super()._write('\n'.join(map(dumps, self.records)))
+        return super()._write(
+            "\n".join(
+                map(lambda record: dumps(record, cls=JsonSerialize), self.records)
+            )
+        )
 
     def run(self) -> None:
         # use default behavior, no additional run steps needed
